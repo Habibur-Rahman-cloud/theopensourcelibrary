@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== DARK THEME (default) ===== */
+:root,
+html.dark {
+  --bg-primary: #0F0F1A;
+  --bg-secondary: #1A1A2E;
+  --bg-tertiary: #16213E;
+  --text-heading: #FFFFFF;
+  --text-body: #E2E8F0;
+  --text-muted: #94A3B8;
+  --glass-bg: rgba(26, 26, 46, 0.7);
+  --glass-border: rgba(108, 99, 255, 0.1);
+  --glass-border-hover: rgba(108, 99, 255, 0.3);
+  --glass-shadow: rgba(0, 0, 0, 0.4);
+  --glass-shadow-hover: rgba(108, 99, 255, 0.15);
+  --search-bg: #1A1A2E;
+  --search-border: rgba(255, 255, 255, 0.05);
+  --scrollbar-track: #0F0F1A;
+  --scrollbar-thumb: #6C63FF;
+  --scrollbar-hover: #4A4A8C;
+  --navbar-bg: rgba(15, 15, 26, 0.85);
+  --mobile-menu-bg: #1A1A2E;
+  --toggle-bg: rgba(255, 255, 255, 0.05);
+  --toggle-hover: rgba(255, 255, 255, 0.1);
+  --toggle-color: #F59E0B;
+  --card-badge-bg: rgba(108, 99, 255, 0.2);
+  --card-badge-border: rgba(108, 99, 255, 0.3);
+}
+
+/* ===== LIGHT THEME ===== */
+html.light {
+  --bg-primary: #F8F9FC;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #EEF0F6;
+  --text-heading: #1A1A2E;
+  --text-body: #334155;
+  --text-muted: #64748B;
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(108, 99, 255, 0.12);
+  --glass-border-hover: rgba(108, 99, 255, 0.35);
+  --glass-shadow: rgba(108, 99, 255, 0.06);
+  --glass-shadow-hover: rgba(108, 99, 255, 0.12);
+  --search-bg: #EEF0F6;
+  --search-border: rgba(0, 0, 0, 0.08);
+  --scrollbar-track: #F1F5F9;
+  --scrollbar-thumb: #6C63FF;
+  --scrollbar-hover: #8B85FF;
+  --navbar-bg: rgba(248, 249, 252, 0.9);
+  --mobile-menu-bg: #FFFFFF;
+  --toggle-bg: rgba(0, 0, 0, 0.05);
+  --toggle-hover: rgba(0, 0, 0, 0.1);
+  --toggle-color: #6C63FF;
+  --card-badge-bg: rgba(108, 99, 255, 0.1);
+  --card-badge-border: rgba(108, 99, 255, 0.2);
+}
+
+/* ===== GLOBAL ===== */
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: var(--bg-primary);
+  color: var(--text-body);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===== SEMANTIC CLASSES ===== */
+.app-bg {
+  background-color: var(--bg-primary);
+}
+
+.text-heading {
+  color: var(--text-heading);
+}
+
+.text-body {
+  color: var(--text-body);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* ===== GLASS CARD ===== */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 var(--glass-shadow);
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+}
+
+.glass-card:hover {
+  border: 1px solid var(--glass-border-hover);
+  box-shadow: 0 8px 40px 0 var(--glass-shadow-hover);
+}
+
+/* ===== NAVBAR ===== */
+.navbar-glass {
+  background: var(--navbar-bg);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  transition: background 0.3s;
+}
+
+.mobile-menu {
+  background: var(--mobile-menu-bg);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* ===== SEARCH INPUT ===== */
+.search-input {
+  background: var(--search-bg);
+  color: var(--text-heading);
+  border: 1px solid var(--search-border);
+  transition: all 0.3s;
+}
+
+.search-input:focus {
+  border-color: #6C63FF;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ===== THEME TOGGLE ===== */
+.theme-toggle-btn {
+  background: var(--toggle-bg);
+  color: var(--toggle-color);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--toggle-hover);
+  transform: rotate(15deg);
+}
+
+/* ===== TEXT GRADIENT ===== */
+.text-gradient {
+  background: linear-gradient(135deg, #6C63FF 0%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+  @apply bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95;
+}
+
+.btn-outline {
+  @apply border border-primary text-primary hover:bg-primary hover:text-white font-medium py-2 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95;
+}
+
+/* ===== CUSTOM SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+/* ===== MODAL ===== */
+.modal-bg {
+  background-color: var(--bg-secondary);
+}
+
+.modal-cover-bg {
+  background-color: var(--bg-primary);
+}
+
+/* ===== LIGHT MODE OVERRIDES FOR SPECIFIC COMPONENTS ===== */
+html.light .bg-navy-900 {
+  background-color: var(--bg-primary);
+}
+
+html.light .bg-navy-800 {
+  background-color: var(--bg-secondary);
+}
+
+html.light .shadow-black\/30 {
+  --tw-shadow-color: rgba(108, 99, 255, 0.08);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite ease-in-out;
+}
+
+/* Make the Loader work in light mode too */
+html.light .fixed.inset-0.bg-navy-900 {
+  background-color: var(--bg-primary) !important;
+}
