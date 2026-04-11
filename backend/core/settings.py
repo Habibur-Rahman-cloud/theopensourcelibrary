@@ -171,3 +171,9 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+
+if os.environ.get("CREATE_SUPERUSER") == "True":
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    if not User.objects.filter(username="theopensourcelibrary").exists():
+        User.objects.create_superuser("theopensourcelibrary", "pixelnodecorporations@example.com", "teen.baar.opensource")
