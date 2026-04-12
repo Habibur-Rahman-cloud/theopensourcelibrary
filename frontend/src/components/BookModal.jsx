@@ -204,7 +204,10 @@ const BookModal = ({ book, onClose }) => {
                             
                             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                                 <Viewer 
-                                    fileUrl={pdfUrl} 
+                                    fileUrl={{
+                                        url: pdfUrl,
+                                        withCredentials: false
+                                    }} 
                                     plugins={[defaultLayoutPluginInstance]} 
                                     initialPage={lastReadPage}
                                     onPageChange={handlePageChange}
