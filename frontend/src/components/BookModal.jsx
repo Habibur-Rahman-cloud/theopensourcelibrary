@@ -66,7 +66,7 @@ const BookModal = ({ book, onClose }) => {
                 }}
             </Toolbar>
         ),
-        sidebarTabs: (defaultTabs) => 
+        sidebarTabs: (defaultTabs) =>
             defaultTabs.filter((tab) => tab.contentKey === 'thumbnails'),
     });
 
@@ -98,7 +98,7 @@ const BookModal = ({ book, onClose }) => {
                     className={`relative w-full max-w-6xl modal-bg overflow-hidden border border-white/10 shadow-2xl flex flex-col md:flex-row h-full md:h-auto md:max-h-[90vh] rounded-none md:rounded-[2rem]`}
                 >
                     {!showReader && (
-                        <button 
+                        <button
                             onClick={onClose}
                             className="absolute top-4 right-4 md:top-6 md:right-6 z-[110] p-3 bg-black/40 hover:bg-black/60 md:bg-white/5 md:hover:bg-white/10 rounded-full text-white md:text-heading transition-all transform active:scale-90 shadow-xl backdrop-blur-md"
                         >
@@ -109,7 +109,7 @@ const BookModal = ({ book, onClose }) => {
                     {!showReader ? (
                         <>
                             <div className="w-full md:w-2/5 p-8 md:p-12 modal-cover-bg flex items-center justify-center relative overflow-hidden group">
-                                <motion.img 
+                                <motion.img
                                     layoutId={`book-img-${book.id}`}
                                     src={getMediaUrl(book.cover_image)}
                                     alt={book.title}
@@ -122,19 +122,19 @@ const BookModal = ({ book, onClose }) => {
                             <div className="w-full md:w-3/5 p-8 md:p-12 overflow-y-auto custom-scrollbar flex flex-col">
                                 <div className="mb-8">
                                     <span className="text-primary font-black uppercase tracking-widest text-xs mb-3 block px-4 py-1.5 bg-primary/5 rounded-full w-fit border border-primary/20">
-                                         {book.category_name}
+                                        {book.category_name}
                                     </span>
                                     <h2 className="text-3xl md:text-5xl font-black text-heading mb-6 leading-tight tracking-tight">{book.title}</h2>
-                                    
+
                                     <div className="flex space-x-2 p-1.5 rounded-2xl w-fit border border-white/5 shadow-inner" style={{ background: 'var(--bg-primary)' }}>
-                                        <button 
+                                        <button
                                             onClick={() => setActiveTab('summary')}
                                             className={`px-6 py-2.5 rounded-xl font-bold flex items-center space-x-2 transition-all ${activeTab === 'summary' ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-heading'}`}
                                         >
                                             <Info size={18} />
                                             <span>Summary</span>
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => setActiveTab('description')}
                                             className={`px-6 py-2.5 rounded-xl font-bold flex items-center space-x-2 transition-all ${activeTab === 'description' ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-heading'}`}
                                         >
@@ -144,7 +144,7 @@ const BookModal = ({ book, onClose }) => {
                                     </div>
                                 </div>
 
-                                <motion.div 
+                                <motion.div
                                     key={activeTab}
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -156,7 +156,7 @@ const BookModal = ({ book, onClose }) => {
                                 </motion.div>
 
                                 <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 mt-auto">
-                                    <button 
+                                    <button
                                         onClick={() => setShowReader(true)}
                                         className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg shadow-xl shadow-primary/20 group transform"
                                     >
@@ -172,9 +172,9 @@ const BookModal = ({ book, onClose }) => {
                                             </>
                                         )}
                                     </button>
-                                    <a 
-                                        href={pdfUrl} 
-                                        download 
+                                    <a
+                                        href={pdfUrl}
+                                        download
                                         className="btn-outline w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg group transform"
                                     >
                                         <Download size={24} className="group-hover:-translate-y-1 transition-transform" />
@@ -184,26 +184,36 @@ const BookModal = ({ book, onClose }) => {
                             </div>
                         </>
                     ) : (
-                        <div className="w-full h-full md:h-[90vh] bg-white flex flex-col relative">
-                            {/* Stable Back Button without icons */}
-                            <div className="absolute top-2 left-2 z-50 md:top-4 md:left-4">
+                        <div className="w-full h-full md:h-[90vh] bg-white flex flex-col relative overflow-hidden">
+                            {/* Header / Back Button Area */}
+                            <div className="absolute top-2 left-2 z-[100] md:top-4 md:left-4 flex items-center space-x-3">
                                 <button 
                                     onClick={() => setShowReader(false)}
-                                    className="px-4 py-2 bg-black text-white rounded-lg font-bold flex items-center shadow-2xl"
+                                    className="px-5 py-2.5 bg-navy-900 text-white rounded-xl font-bold flex items-center shadow-2xl hover:bg-black transition-all ring-1 ring-white/20"
                                 >
                                     <span className="mr-2">&larr;</span>
-                                    <span>Back to Library</span>
+                                    <span>Exit Reader</span>
                                 </button>
+                                
+                                {lastReadPage > 0 && (
+                                    <div className="hidden sm:flex bg-primary/90 text-white px-4 py-2 rounded-xl font-black text-xs shadow-xl backdrop-blur-md">
+                                        Saved: Pg {lastReadPage + 1}
+                                    </div>
+                                )}
                             </div>
                             
-                            <div className="flex-grow overflow-hidden">
+                            {/* Pro Reader with all requested features */}
+                            <div className="flex-grow w-full h-full pt-2">
                                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                                    <Viewer 
-                                        fileUrl={pdfUrl} 
-                                        initialPage={lastReadPage}
-                                        onPageChange={handlePageChange}
-                                        defaultScale={SpecialZoomLevel.PageWidth}
-                                    />
+                                    <div style={{ height: '100%' }}>
+                                        <Viewer 
+                                            fileUrl={pdfUrl} 
+                                            plugins={[defaultLayoutPluginInstance]} 
+                                            initialPage={lastReadPage}
+                                            onPageChange={handlePageChange}
+                                            defaultScale={SpecialZoomLevel.PageWidth}
+                                        />
+                                    </div>
                                 </Worker>
                             </div>
                         </div>
