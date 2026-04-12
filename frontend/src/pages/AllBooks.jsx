@@ -31,8 +31,8 @@ const AllBooks = () => {
     }, []);
 
     const filteredBooks = books.filter(book => 
-        book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.author_name.toLowerCase().includes(searchTerm.toLowerCase())
+        (book.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (book.author_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading) return <Loader />;
