@@ -185,7 +185,6 @@ const BookModal = ({ book, onClose }) => {
                         </>
                     ) : (
                         <div className="w-full h-full md:h-[90vh] bg-white flex flex-col relative">
-                            {/* Improved Mobile Navigation Overlay */}
                             <div className="absolute top-2 left-2 z-50 md:top-4 md:left-4 flex items-center space-x-2 md:space-x-4">
                                 <button 
                                     onClick={() => setShowReader(false)}
@@ -204,10 +203,7 @@ const BookModal = ({ book, onClose }) => {
                             
                             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                                 <Viewer 
-                                    fileUrl={{
-                                        url: pdfUrl,
-                                        withCredentials: false
-                                    }} 
+                                    fileUrl={pdfUrl} 
                                     plugins={[defaultLayoutPluginInstance]} 
                                     initialPage={lastReadPage}
                                     onPageChange={handlePageChange}
