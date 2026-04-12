@@ -185,14 +185,14 @@ const BookModal = ({ book, onClose }) => {
                         </>
                     ) : (
                         <div className="w-full h-full md:h-[90vh] bg-white flex flex-col relative">
-                            {/* Simple Back Button */}
+                            {/* Stable Back Button without icons */}
                             <div className="absolute top-2 left-2 z-50 md:top-4 md:left-4">
                                 <button 
                                     onClick={() => setShowReader(false)}
-                                    className="px-4 py-2 bg-black text-white rounded-lg font-bold flex items-center space-x-2"
+                                    className="px-4 py-2 bg-black text-white rounded-lg font-bold flex items-center shadow-2xl"
                                 >
-                                    <ChevronLeft size={20} />
-                                    <span>Back</span>
+                                    <span className="mr-2">&larr;</span>
+                                    <span>Back to Library</span>
                                 </button>
                             </div>
                             
@@ -200,7 +200,6 @@ const BookModal = ({ book, onClose }) => {
                                 <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                                     <Viewer 
                                         fileUrl={pdfUrl} 
-                                        plugins={[defaultLayoutPluginInstance]} 
                                         initialPage={lastReadPage}
                                         onPageChange={handlePageChange}
                                         defaultScale={SpecialZoomLevel.PageWidth}
