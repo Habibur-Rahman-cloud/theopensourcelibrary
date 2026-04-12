@@ -78,6 +78,32 @@ class NewsletterViewSet(viewsets.ViewSet):
     def ping(self, request):
         return Response({"message": "Newsletter API is reachable!"}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'], url_path='test-email')
+    def test_email(self, request):
+        from django.core.mail import send_mail
+        from django.conf import settings
+        try:
+            email = getattr(settings, 'EMAIL_HOST_USER', None)
+            if not email:
+                return Response({"error": "EMAIL_HOST_USER is not set in settings/environment"}, status=500)
+            
+            send_mail(
+                'Test Connectivity Check ✨',
+                'If you see this, your email configuration is working perfectly!',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            return Response({"success": True, "message": f"Test email sent successfully to {email}!"})
+        except Exception as e:
+            import traceback
+            print(f"DIAGNOSTIC EMAIL ERROR: {str(e)}")
+            return Response({
+                "success": False, 
+                "error": str(e),
+                "tip": "If this is an 'authentication failed' error, make sure you are using a Gmail 'App Password', not your regular password."
+            }, status=500)
+
     def _send_otp_email(self, email, otp):
         from django.core.mail import EmailMultiAlternatives
         from django.conf import settings
