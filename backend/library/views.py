@@ -191,10 +191,11 @@ class NewsletterViewSet(viewsets.ViewSet):
                 subject, 
                 text_content, 
                 from_email, 
-                [email]
+                [email],
+                connection=connection
             )
             msg.attach_alternative(html_content, "text/html")
-            msg.send(connection=connection, fail_silently=False)
+            msg.send(fail_silently=False)
             print(f"DEBUG: Background email sent successfully to {email}")
         except Exception as e:
             import traceback
