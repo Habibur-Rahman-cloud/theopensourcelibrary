@@ -185,36 +185,26 @@ const BookModal = ({ book, onClose }) => {
                         </>
                     ) : (
                         <div className="w-full h-full md:h-[90vh] bg-white flex flex-col relative overflow-hidden">
-                            {/* Header / Back Button Area */}
-                            <div className="absolute top-2 left-2 z-[100] md:top-4 md:left-4 flex items-center space-x-3">
+                            {/* Pro-styled Header for Native Viewer */}
+                            <div className="absolute top-0 left-0 right-0 z-[100] p-4 bg-navy-900 flex items-center justify-between border-b border-white/10">
                                 <button 
                                     onClick={() => setShowReader(false)}
-                                    className="px-5 py-2.5 bg-navy-900 text-white rounded-xl font-bold flex items-center shadow-2xl hover:bg-black transition-all ring-1 ring-white/20"
+                                    className="px-6 py-2 bg-primary text-white rounded-xl font-black shadow-lg hover:scale-105 transition-all text-sm uppercase tracking-widest"
                                 >
-                                    <span className="mr-2">&larr;</span>
-                                    <span>Exit Reader</span>
+                                    &larr; Exit Reader
                                 </button>
-                                
-                                {lastReadPage > 0 && (
-                                    <div className="hidden sm:flex bg-primary/90 text-white px-4 py-2 rounded-xl font-black text-xs shadow-xl backdrop-blur-md">
-                                        Saved: Pg {lastReadPage + 1}
-                                    </div>
-                                )}
+                                <div className="hidden md:block text-white font-bold opacity-50 text-xs tracking-widest uppercase">
+                                    Native Browser PDF View
+                                </div>
                             </div>
                             
-                            {/* Pro Reader with all requested features */}
-                            <div className="flex-grow w-full h-full pt-2">
-                                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                                    <div style={{ height: '100%' }}>
-                                        <Viewer 
-                                            fileUrl={pdfUrl} 
-                                            plugins={[defaultLayoutPluginInstance]} 
-                                            initialPage={lastReadPage}
-                                            onPageChange={handlePageChange}
-                                            defaultScale={SpecialZoomLevel.PageWidth}
-                                        />
-                                    </div>
-                                </Worker>
+                            {/* Stable Native Viewer - No Dependencies, No Errors */}
+                            <div className="flex-grow w-full h-full pt-[72px]">
+                                <iframe 
+                                    src={`${pdfUrl}#toolbar=1&navpanes=0`}
+                                    title={book.title}
+                                    className="w-full h-full border-none"
+                                />
                             </div>
                         </div>
                     )}
