@@ -71,6 +71,8 @@ class RequestedBookViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 class NewsletterViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
     def _send_otp_email(self, email, otp):
         from django.core.mail import EmailMultiAlternatives
         from django.conf import settings
@@ -81,7 +83,7 @@ class NewsletterViewSet(viewsets.ViewSet):
         html_content = f"""
         <html>
         <body style="font-family: 'Inter', Arial, sans-serif; background-color: #f4f4f5; padding: 40px 0; margin: 0;">
-            <div style="max-w-md: 600px; margin: 0 auto; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); text-align: center;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); text-align: center;">
                 <h1 style="color: #18181b; font-size: 24px; font-weight: 800; margin-bottom: 8px;">The Opensource Library</h1>
                 <p style="color: #71717a; font-size: 16px; margin-bottom: 32px;">Verify your newsletter subscription</p>
                 
@@ -106,10 +108,14 @@ class NewsletterViewSet(viewsets.ViewSet):
         """
         text_content = strip_tags(html_content)
         
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+        if not from_email:
+            raise ValueError("Email configuration error: DEFAULT_FROM_EMAIL is not set.")
+
         msg = EmailMultiAlternatives(
             subject, 
             text_content, 
-            settings.DEFAULT_FROM_EMAIL, 
+            from_email, 
             [email]
         )
         msg.attach_alternative(html_content, "text/html")
@@ -117,52 +123,70 @@ class NewsletterViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def subscribe(self, request):
-        email = request.data.get('email')
-        if not email:
-            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        otp = str(random.randint(100000, 999999))
-        
-        # Update or create unverified subscriber
-        subscriber, created = Newsletter.objects.get_or_create(email=email)
-        
-        if subscriber.is_verified:
-            return Response({"error": "Already subscribed"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        subscriber.otp = otp
-        subscriber.save()
-        
         try:
-            self._send_otp_email(email, otp)
-            return Response({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
+            email_raw = request.data.get('email')
+            if not email_raw:
+                return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            email = email_raw.strip().lower()
+            otp = str(random.randint(100000, 999999))
+            
+            # Update or create subscriber with normalized email
+            subscriber, created = Newsletter.objects.get_or_create(email=email)
+            
+            if subscriber.is_verified:
+                return Response({"error": "This email is already subscribed."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            subscriber.otp = otp
+            subscriber.save()
+            
+            try:
+                self._send_otp_email(email, otp)
+                return Response({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
+            except Exception as e:
+                print(f"Newsletter Email Error: {str(e)}")
+                return Response({
+                    "error": f"Failed to send email: {str(e)}. Please check your email configuration or try again later."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
         except Exception as e:
-            print(f"Email Error: {str(e)}")
-            return Response({"error": "Failed to send verification email. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print(f"Newsletter Subscribe Error: {str(e)}")
+            return Response({
+                "error": f"Server error during subscription: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'])
     def verify_otp(self, request):
-        email = request.data.get('email')
-        otp = request.data.get('otp')
-        
-        if not email or not otp:
-            return Response({"error": "Email and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
-            
         try:
-            subscriber = Newsletter.objects.get(email=email, otp=otp)
-            subscriber.is_verified = True
-            subscriber.otp = None # Clear OTP after verification
-            subscriber.save()
-            return Response({"message": "Successfully subscribed!"}, status=status.HTTP_200_OK)
-        except Newsletter.DoesNotExist:
-            return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+            email_raw = request.data.get('email')
+            otp = request.data.get('otp')
+            
+            if not email_raw or not otp:
+                return Response({"error": "Email and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            email = email_raw.strip().lower()
+                
+            try:
+                subscriber = Newsletter.objects.get(email=email, otp=otp)
+                subscriber.is_verified = True
+                subscriber.otp = None # Clear OTP after verification
+                subscriber.save()
+                return Response({"message": "Successfully subscribed!"}, status=status.HTTP_200_OK)
+            except Newsletter.DoesNotExist:
+                return Response({"error": "Invalid OTP or email. Please request a new code."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f"Newsletter Verification Error: {str(e)}")
+            return Response({
+                "error": f"Server error during verification: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'], url_path='check-subscription')
     def check_subscription(self, request):
-        email = (request.query_params.get('email') or '').strip()
+        email = (request.query_params.get('email') or '').strip().lower()
         if not email:
             return Response(
                 {"error": "Email is required", "subscribed": False},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        subscribed = Newsletter.objects.filter(email__iexact=email, is_verified=True).exists()
+        subscribed = Newsletter.objects.filter(email=email, is_verified=True).exists()
         return Response({"subscribed": subscribed})
