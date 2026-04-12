@@ -72,6 +72,11 @@ class RequestedBookViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 class NewsletterViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
+    authentication_classes = [] # Disable CSRF/Session checks for this public API
+
+    @action(detail=False, methods=['get'])
+    def ping(self, request):
+        return Response({"message": "Newsletter API is reachable!"}, status=status.HTTP_200_OK)
 
     def _send_otp_email(self, email, otp):
         from django.core.mail import EmailMultiAlternatives
