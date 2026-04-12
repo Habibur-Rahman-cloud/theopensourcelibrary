@@ -174,6 +174,18 @@ class NewsletterViewSet(viewsets.ViewSet):
         if not from_email:
             raise ValueError("Email configuration error: DEFAULT_FROM_EMAIL is not set.")
 
+        pwd = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+        if pwd: pwd = pwd.replace(' ', '')
+
+        from django.core.mail import get_connection
+        connection = get_connection(
+            host=settings.EMAIL_HOST,
+            port=settings.EMAIL_PORT,
+            username=settings.EMAIL_HOST_USER,
+            password=pwd,
+            use_tls=settings.EMAIL_USE_TLS
+        )
+
         try:
             msg = EmailMultiAlternatives(
                 subject, 
@@ -182,7 +194,7 @@ class NewsletterViewSet(viewsets.ViewSet):
                 [email]
             )
             msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=False)
+            msg.send(connection=connection, fail_silently=False)
             print(f"DEBUG: Background email sent successfully to {email}")
         except Exception as e:
             import traceback
