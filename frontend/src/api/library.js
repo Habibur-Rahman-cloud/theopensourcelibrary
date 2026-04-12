@@ -63,12 +63,19 @@ export const getMediaUrl = (url) => {
   if (!url) return null;
   // If it's already a full URL (like from Cloudinary or an external source)
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    // Fix: Cloudinary PDFs often require the .pdf extension to be served correctly via the 'image/upload' path.
-    // If it's a cloudinary URL, refers to a pdf folder, and doesn't have an extension, append .pdf
-    if (url.includes('cloudinary.com') && url.includes('/pdfs/') && !url.toLowerCase().endsWith('.pdf')) {
-      return `${url}.pdf`;
+    let clean = url;
+    
+    // Fix: Cloudinary often stores PDFs as 'raw' resources. 
+    // If the URL contains '/image/upload/' and is a PDF, we must use '/raw/upload/'
+    if (clean.includes('cloudinary.com') && clean.includes('/image/upload/') && clean.includes('/pdfs/')) {
+      clean = clean.replace('/image/upload/', '/raw/upload/');
+      
+      // Also ensure it doesn't have a double extension if it already had one
+      if (!clean.toLowerCase().endsWith('.pdf')) {
+        clean = `${clean}.pdf`;
+      }
     }
-    return url;
+    return clean;
   }
   // Fallback to MEDIA_BASE for locally hosted / stored files
   const cleanUrl = url.startsWith('/') ? url : `/${url}`;
