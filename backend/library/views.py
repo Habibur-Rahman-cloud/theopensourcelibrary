@@ -152,9 +152,12 @@ class NewsletterViewSet(viewsets.ViewSet):
             print(f"DEBUG: OTP saved to database for {email}")
             
             try:
+                import time
+                start_time = time.time()
                 print(f"DEBUG: Attempting to send email to {email}")
                 self._send_otp_email(email, otp)
-                print(f"DEBUG: Email sent successfully to {email}")
+                duration = time.time() - start_time
+                print(f"DEBUG: Email sent successfully to {email} in {duration:.2f} seconds")
                 return Response({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
             except Exception as e:
                 import traceback

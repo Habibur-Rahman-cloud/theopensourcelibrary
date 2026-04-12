@@ -19,7 +19,7 @@ const MEDIA_BASE = (import.meta.env.VITE_MEDIA_BASE || defaultMediaBase).trim().
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 10000,
+  timeout: 30000, // Increased to 30s for email sending in production
 });
 
 export const getCategories = async () => {
