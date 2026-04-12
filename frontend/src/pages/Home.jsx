@@ -12,6 +12,8 @@ const Home = () => {
     const [categories, setCategories] = useState([]);
     const [books, setBooks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showAllCategories, setShowAllCategories] = useState(false);
+    const [showAllBooks, setShowAllBooks] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
     const [searchParams] = useSearchParams();
     const searchQuery = searchParams.get('search') || '';
@@ -137,9 +139,29 @@ const Home = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {categories.map((cat, idx) => (
+                            {categories.slice(0, showAllCategories ? undefined : 2).map((cat, idx) => (
                                 <CategoryCard key={cat.id} category={cat} index={idx} />
                             ))}
+                            
+                            {!showAllCategories && categories.length > 2 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    className="block relative overflow-hidden glass-card p-8 rounded-3xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 aspect-video flex flex-col items-center justify-center space-y-4 cursor-pointer group"
+                                    onClick={() => setShowAllCategories(true)}
+                                >
+                                    <div className="text-5xl group-hover:scale-110 transition-transform duration-500">📂</div>
+                                    <h3 className="text-2xl font-black text-heading leading-tight text-center">
+                                        {categories.length - 2}+ <br />
+                                        <span className="text-primary italic">MORE TOPICS</span>
+                                    </h3>
+                                    <div className="absolute -bottom-1 -right-1 p-3 bg-primary bg-opacity-0 group-hover:bg-opacity-100 rounded-tl-2xl transition-all duration-500">
+                                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                                        <path d="M5 12h14m-7-7 7 7-7 7"/>
+                                       </svg>
+                                    </div>
+                                </motion.div>
+                            )}
                         </div>
                     </section>
 
@@ -152,15 +174,37 @@ const Home = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8">
-                            {books.map((book, idx) => (
-                                <BookCard 
-                                    key={book.id} 
-                                    book={book} 
-                                    index={idx} 
-                                    onView={(b) => setSelectedBook(b)} 
-                                />
+                        <div className={showAllBooks ? 
+                            "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8" : 
+                            "flex overflow-x-auto pb-8 gap-6 md:gap-8 no-scrollbar scroll-smooth snap-x"
+                        }>
+                            {books.slice(0, showAllBooks ? undefined : 3).map((book, idx) => (
+                                <div key={book.id} className={!showAllBooks ? "min-w-[280px] sm:min-w-[320px] snap-start" : ""}>
+                                    <BookCard 
+                                        book={book} 
+                                        index={idx} 
+                                        onView={(b) => setSelectedBook(b)} 
+                                    />
+                                </div>
                             ))}
+
+                            {!showAllBooks && books.length > 3 && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    className="min-w-[200px] flex flex-col items-center justify-center glass-card rounded-3xl border-2 border-dashed border-accent/20 hover:border-accent/40 transition-all cursor-pointer group snap-start"
+                                    onClick={() => setShowAllBooks(true)}
+                                >
+                                    <div className="text-4xl mb-4 group-hover:rotate-12 transition-transform duration-500">🚀</div>
+                                    <h3 className="text-xl font-black text-heading text-center">
+                                        {books.length - 3}+ <br />
+                                        <span className="text-accent italic">DISCOVER MORE</span>
+                                    </h3>
+                                    <div className="mt-6 p-3 bg-accent/10 rounded-full group-hover:bg-accent group-hover:text-white transition-all">
+                                        <Sparkles size={20} />
+                                    </div>
+                                </motion.div>
+                            )}
                         </div>
                     </section>
 

@@ -207,6 +207,14 @@ html.light .shadow-black\/30 {
   animation: bounce-subtle 2s infinite ease-in-out;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Make the Loader work in light mode too */
 html.light .fixed.inset-0.bg-navy-900 {
   background-color: var(--bg-primary) !important;
