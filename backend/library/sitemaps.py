@@ -1,19 +1,29 @@
 from django.contrib.sitemaps import Sitemap
 from .models import Book, Category
-from django.urls import reverse
 
-class StaticViewSitemap(Sitemap):
+class BaseSitemap(Sitemap):
+    protocol = 'https'
+    
+    # This forces Django to use your frontend domain instead of the API domain
+    def get_urls(self, site=None, **kwargs):
+        # We pass a dummy 'site' object to override the domain
+        class DummySite:
+            domain = 'theopensourcelibrary.com'
+            name = 'theopensourcelibrary.com'
+        
+        return super().get_urls(site=DummySite(), **kwargs)
+
+class StaticViewSitemap(BaseSitemap):
     priority = 1.0
     changefreq = 'daily'
 
     def items(self):
-        # These names should match the route names in your frontend
         return ['/', '/categories', '/books', '/request-book', '/become-contributor']
 
     def location(self, item):
-        return f"https://theopensourcelibrary.com{item}"
+        return item
 
-class CategorySitemap(Sitemap):
+class CategorySitemap(BaseSitemap):
     changefreq = "weekly"
     priority = 0.8
 
@@ -21,9 +31,9 @@ class CategorySitemap(Sitemap):
         return Category.objects.all()
 
     def location(self, obj):
-        return f"https://theopensourcelibrary.com/category/{obj.slug}"
+        return f"/category/{obj.slug}"
 
-class BookSitemap(Sitemap):
+class BookSitemap(BaseSitemap):
     changefreq = "monthly"
     priority = 0.7
 
@@ -31,7 +41,7 @@ class BookSitemap(Sitemap):
         return Book.objects.all().order_by('-created_at')
 
     def location(self, obj):
-        return f"https://theopensourcelibrary.com/book/{obj.slug}"
+        return f"/book/{obj.slug}"
 
     def lastmod(self, obj):
         return obj.created_at
