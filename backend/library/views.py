@@ -88,6 +88,7 @@ class NewsletterViewSet(viewsets.ViewSet):
         try:
             user = getattr(settings, 'EMAIL_HOST_USER', None)
             pwd = getattr(settings, 'EMAIL_HOST_PASSWORD', None)
+            if pwd: pwd = pwd.replace(' ', '') # Fix for copy-paste spaces
             fm = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
             
             missing = []
@@ -99,14 +100,24 @@ class NewsletterViewSet(viewsets.ViewSet):
                 return HttpResponse(
                     json.dumps({"error": f"Missing environment variables: {', '.join(missing)}", "tip": "Please add these to your Railway Variables tab."}),
                     content_type="application/json",
-                    status=200 # Use 200 so it doesn't trigger the generic 500 page
+                    status=200 
                 )
+
+            from django.core.mail import get_connection
+            connection = get_connection(
+                host=settings.EMAIL_HOST,
+                port=settings.EMAIL_PORT,
+                username=user,
+                password=pwd,
+                use_tls=settings.EMAIL_USE_TLS
+            )
 
             send_mail(
                 'Diagnostic Check ✨',
                 'If you see this, your email configuration is working perfectly!',
                 fm,
                 [user],
+                connection=connection,
                 fail_silently=False,
             )
             return HttpResponse(
@@ -118,7 +129,7 @@ class NewsletterViewSet(viewsets.ViewSet):
                 json.dumps({
                     "success": False, 
                     "error": str(e),
-                    "tip": "Check if your password is a 16-character 'App Password' from Google. Your regular password will not work."
+                    "tip": "Ensure you removed spaces from the 16-letter App Password."
                 }),
                 content_type="application/json",
                 status=200
