@@ -61,8 +61,11 @@ export const submitBookRequest = async ({ title, author_name, email }) => {
 
 export const getMediaUrl = (url) => {
   if (!url) return null;
-  if (url.startsWith('http')) return url;
-  return MEDIA_BASE + url;
+  // If it's already a full URL (like from Cloudinary or an external source), return it
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Fallback to MEDIA_BASE for locally hosted / stored files
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  return MEDIA_BASE + cleanUrl;
 };
 
 export default api;
