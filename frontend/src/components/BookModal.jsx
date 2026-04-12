@@ -185,31 +185,28 @@ const BookModal = ({ book, onClose }) => {
                         </>
                     ) : (
                         <div className="w-full h-full md:h-[90vh] bg-white flex flex-col relative">
-                            <div className="absolute top-2 left-2 z-50 md:top-4 md:left-4 flex items-center space-x-2 md:space-x-4">
+                            {/* Simple Back Button */}
+                            <div className="absolute top-2 left-2 z-50 md:top-4 md:left-4">
                                 <button 
                                     onClick={() => setShowReader(false)}
-                                    className="p-3 md:px-6 md:py-3 bg-navy-900 text-white rounded-xl md:rounded-xl font-black shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center md:space-x-2 ring-4 ring-primary/20"
+                                    className="px-4 py-2 bg-black text-white rounded-lg font-bold flex items-center space-x-2"
                                 >
-                                    <ChevronLeft size={24} />
-                                    <span className="hidden md:inline">BACK TO INFO</span>
+                                    <ChevronLeft size={20} />
+                                    <span>Back</span>
                                 </button>
-                                {lastReadPage > 0 && (
-                                    <div className="hidden sm:flex bg-primary/90 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-white font-bold text-[10px] md:text-sm shadow-xl items-center space-x-1 md:space-x-2 animate-bounce-subtle">
-                                        <BookmarkCheck size={14} className="md:size-4" />
-                                        <span>Last read: Page {lastReadPage + 1}</span>
-                                    </div>
-                                )}
                             </div>
                             
-                            <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                                <Viewer 
-                                    fileUrl={pdfUrl} 
-                                    plugins={[defaultLayoutPluginInstance]} 
-                                    initialPage={lastReadPage}
-                                    onPageChange={handlePageChange}
-                                    defaultScale={SpecialZoomLevel.PageWidth}
-                                />
-                            </Worker>
+                            <div className="flex-grow overflow-hidden">
+                                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                                    <Viewer 
+                                        fileUrl={pdfUrl} 
+                                        plugins={[defaultLayoutPluginInstance]} 
+                                        initialPage={lastReadPage}
+                                        onPageChange={handlePageChange}
+                                        defaultScale={SpecialZoomLevel.PageWidth}
+                                    />
+                                </Worker>
+                            </div>
                         </div>
                     )}
                 </motion.div>
