@@ -93,7 +93,7 @@ class NewsletterViewSet(viewsets.ViewSet):
             url = "https://api.resend.com/emails"
             headers = {"Authorization": f"Bearer {resend_api_key}", "Content-Type": "application/json"}
             payload = {
-                "from": "Library <onboarding@resend.dev>",
+                "from": "Library <newsletter@theopensourcelibrary.com>",
                 "to": ["thehabibur24@gmail.com"], # Testing with your own email
                 "subject": "Diagnostic Check ✨ (Resend API)",
                 "html": "<p>If you see this, Resend API is working perfectly!</p>"
@@ -155,7 +155,7 @@ class NewsletterViewSet(viewsets.ViewSet):
             url = "https://api.resend.com/emails"
             headers = {"Authorization": f"Bearer {resend_api_key}", "Content-Type": "application/json"}
             payload = {
-                "from": "Library <onboarding@resend.dev>",
+                "from": "Library <newsletter@theopensourcelibrary.com>",
                 "to": [email],
                 "subject": subject,
                 "html": html_content
