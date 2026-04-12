@@ -82,27 +82,47 @@ class NewsletterViewSet(viewsets.ViewSet):
     def test_email(self, request):
         from django.core.mail import send_mail
         from django.conf import settings
+        from django.http import HttpResponse
+        import json
+        
         try:
-            email = getattr(settings, 'EMAIL_HOST_USER', None)
-            if not email:
-                return Response({"error": "EMAIL_HOST_USER is not set in settings/environment"}, status=500)
+            user = getattr(settings, 'EMAIL_HOST_USER', None)
+            pwd = getattr(settings, 'EMAIL_HOST_PASSWORD', None)
+            fm = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
             
+            missing = []
+            if not user: missing.append("EMAIL_HOST_USER")
+            if not pwd: missing.append("EMAIL_HOST_PASSWORD")
+            if not fm: missing.append("DEFAULT_FROM_EMAIL")
+            
+            if missing:
+                return HttpResponse(
+                    json.dumps({"error": f"Missing environment variables: {', '.join(missing)}", "tip": "Please add these to your Railway Variables tab."}),
+                    content_type="application/json",
+                    status=200 # Use 200 so it doesn't trigger the generic 500 page
+                )
+
             send_mail(
-                'Test Connectivity Check ✨',
+                'Diagnostic Check ✨',
                 'If you see this, your email configuration is working perfectly!',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
+                fm,
+                [user],
                 fail_silently=False,
             )
-            return Response({"success": True, "message": f"Test email sent successfully to {email}!"})
+            return HttpResponse(
+                json.dumps({"success": True, "message": f"Test email sent successfully to {user}!"}),
+                content_type="application/json"
+            )
         except Exception as e:
-            import traceback
-            print(f"DIAGNOSTIC EMAIL ERROR: {str(e)}")
-            return Response({
-                "success": False, 
-                "error": str(e),
-                "tip": "If this is an 'authentication failed' error, make sure you are using a Gmail 'App Password', not your regular password."
-            }, status=500)
+            return HttpResponse(
+                json.dumps({
+                    "success": False, 
+                    "error": str(e),
+                    "tip": "Check if your password is a 16-character 'App Password' from Google. Your regular password will not work."
+                }),
+                content_type="application/json",
+                status=200
+            )
 
     def _send_otp_email(self, email, otp):
         from django.core.mail import EmailMultiAlternatives
