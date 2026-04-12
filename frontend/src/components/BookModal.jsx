@@ -1,88 +1,28 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Info, AlignLeft, Eye, BookmarkCheck, ChevronLeft } from 'lucide-react';
-import { Viewer, Worker, SpecialZoomLevel } from '@react-pdf-viewer/core';
-import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
-import '@react-pdf-viewer/core/lib/styles/index.css';
-import '@react-pdf-viewer/default-layout/lib/styles/index.css';
+import { X, Download, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText } from 'lucide-react';
 import { getMediaUrl } from '../api/library';
 
 const BookModal = ({ book, onClose }) => {
     const [activeTab, setActiveTab] = useState('summary');
     const [showReader, setShowReader] = useState(false);
-    const [lastReadPage, setLastReadPage] = useState(() => {
-        try {
-            const savedPage = localStorage.getItem(`bookmark-book-${book.id}`);
-            return savedPage ? parseInt(savedPage, 10) : 0;
-        } catch {
-            return 0;
-        }
-    });
-
-    // Optimized: Custom toolbar layout as requested by the user
-    const defaultLayoutPluginInstance = defaultLayoutPlugin({
-        renderToolbar: (Toolbar) => (
-            <Toolbar>
-                {(slots) => {
-                    const {
-                        CurrentPageInput,
-                        GoToNextPage,
-                        GoToPreviousPage,
-                        NumberOfPages,
-                        ZoomIn,
-                        ZoomOut,
-                        EnterFullScreen,
-                        SwitchSidebar,
-                    } = slots;
-                    return (
-                        <div className="flex items-center justify-between w-full px-2 md:px-6 py-2 bg-navy-900 border-b border-white/5">
-                            {/* Left Side - Minimal/None as requested */}
-                            <div className="w-24 md:w-32"></div>
-
-                            {/* Center - Page Navigation */}
-                            <div className="flex items-center space-x-1 md:space-x-3 bg-white/5 py-1 px-2 md:px-4 rounded-xl border border-white/10">
-                                <GoToPreviousPage />
-                                <div className="flex items-center space-x-1 text-white font-black text-xs md:text-sm min-w-fit">
-                                    <div className="w-10">
-                                        <CurrentPageInput />
-                                    </div>
-                                    <span className="opacity-40">/</span>
-                                    <NumberOfPages />
-                                </div>
-                                <GoToNextPage />
-                            </div>
-
-                            {/* Right Side - Tools (Zoom, Thumbnail, Fullscreen) */}
-                            <div className="flex items-center space-x-0.5 md:space-x-2">
-                                <div className="hidden sm:flex items-center space-x-1 mr-2 px-2 border-r border-white/10">
-                                    <ZoomOut />
-                                    <ZoomIn />
-                                </div>
-                                <SwitchSidebar />
-                                <EnterFullScreen />
-                            </div>
-                        </div>
-                    );
-                }}
-            </Toolbar>
-        ),
-        sidebarTabs: (defaultTabs) =>
-            defaultTabs.filter((tab) => tab.contentKey === 'thumbnails'),
-    });
-
-    const handlePageChange = (e) => {
-        if (book && showReader) {
-            const page = e.currentPage;
-            setLastReadPage(page);
-            localStorage.setItem(`bookmark-book-${book.id}`, page.toString());
-        }
-    };
+    const [zoom, setZoom] = useState(100);
+    const [showThumbnails, setShowThumbnails] = useState(false);
+    const [page, setPage] = useState(1);
 
     const pdfUrl = getMediaUrl(book.pdf_file, book.id);
 
+    // Feature toggles for the native viewer
+    // Fragments: #page=X&zoom=Y&pagemode=thumbs/bookmarks
+    const getViewerUrl = () => {
+        let params = `#page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
+        if (showThumbnails) params += '&pagemode=thumbs';
+        return `${pdfUrl}${params}`;
+    };
+
     return (
         <AnimatePresence>
-            <div className={`fixed inset-0 z-[100] flex items-center justify-center ${showReader ? 'p-0 md:p-8' : 'p-4 md:p-8'}`}>
+            <div className={`fixed inset-0 z-[100] flex items-center justify-center ${showReader ? 'p-0' : 'p-4 md:p-8'}`}>
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -95,12 +35,12 @@ const BookModal = ({ book, onClose }) => {
                     initial={{ scale: 0.9, opacity: 0, y: 50 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 50 }}
-                    className={`relative w-full max-w-6xl modal-bg overflow-hidden border border-white/10 shadow-2xl flex flex-col md:flex-row h-full md:h-auto md:max-h-[90vh] rounded-none md:rounded-[2rem]`}
+                    className={`relative w-full max-w-6xl modal-bg overflow-hidden border border-white/10 shadow-2xl flex flex-col md:flex-row h-full ${showReader ? 'md:h-full' : 'md:h-auto md:max-h-[85vh]'} rounded-none md:rounded-[2rem]`}
                 >
                     {!showReader && (
-                        <button
+                        <button 
                             onClick={onClose}
-                            className="absolute top-4 right-4 md:top-6 md:right-6 z-[110] p-3 bg-black/40 hover:bg-black/60 md:bg-white/5 md:hover:bg-white/10 rounded-full text-white md:text-heading transition-all transform active:scale-90 shadow-xl backdrop-blur-md"
+                            className="absolute top-4 right-4 md:top-6 md:right-6 z-[110] p-3 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all transform active:scale-90 shadow-xl backdrop-blur-md"
                         >
                             <X size={24} />
                         </button>
@@ -109,32 +49,31 @@ const BookModal = ({ book, onClose }) => {
                     {!showReader ? (
                         <>
                             <div className="w-full md:w-2/5 p-8 md:p-12 modal-cover-bg flex items-center justify-center relative overflow-hidden group">
-                                <motion.img
+                                <motion.img 
                                     layoutId={`book-img-${book.id}`}
                                     src={getMediaUrl(book.cover_image)}
                                     alt={book.title}
                                     className="w-full h-auto max-h-[60vh] object-contain rounded-2xl shadow-2xl relative z-10"
                                 />
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 group-hover:scale-150 transition-transform duration-1000"></div>
-                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/20 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2 group-hover:scale-150 transition-transform duration-1000"></div>
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
                             </div>
 
                             <div className="w-full md:w-3/5 p-8 md:p-12 overflow-y-auto custom-scrollbar flex flex-col">
                                 <div className="mb-8">
                                     <span className="text-primary font-black uppercase tracking-widest text-xs mb-3 block px-4 py-1.5 bg-primary/5 rounded-full w-fit border border-primary/20">
-                                        {book.category_name}
+                                         {book.category_name}
                                     </span>
                                     <h2 className="text-3xl md:text-5xl font-black text-heading mb-6 leading-tight tracking-tight">{book.title}</h2>
-
-                                    <div className="flex space-x-2 p-1.5 rounded-2xl w-fit border border-white/5 shadow-inner" style={{ background: 'var(--bg-primary)' }}>
-                                        <button
+                                    
+                                    <div className="flex space-x-2 p-1.5 rounded-2xl w-fit border border-white/5 shadow-inner bg-navy-900">
+                                        <button 
                                             onClick={() => setActiveTab('summary')}
                                             className={`px-6 py-2.5 rounded-xl font-bold flex items-center space-x-2 transition-all ${activeTab === 'summary' ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-heading'}`}
                                         >
                                             <Info size={18} />
                                             <span>Summary</span>
                                         </button>
-                                        <button
+                                        <button 
                                             onClick={() => setActiveTab('description')}
                                             className={`px-6 py-2.5 rounded-xl font-bold flex items-center space-x-2 transition-all ${activeTab === 'description' ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-heading'}`}
                                         >
@@ -144,7 +83,7 @@ const BookModal = ({ book, onClose }) => {
                                     </div>
                                 </div>
 
-                                <motion.div
+                                <motion.div 
                                     key={activeTab}
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -156,25 +95,16 @@ const BookModal = ({ book, onClose }) => {
                                 </motion.div>
 
                                 <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 mt-auto">
-                                    <button
+                                    <button 
                                         onClick={() => setShowReader(true)}
                                         className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg shadow-xl shadow-primary/20 group transform"
                                     >
-                                        {lastReadPage > 0 ? (
-                                            <>
-                                                <BookmarkCheck size={24} className="group-hover:scale-125 transition-transform text-accent" />
-                                                <span className="font-black uppercase tracking-tight">RESUME READING <span className="opacity-50 text-sm ml-1">(Pg {lastReadPage + 1})</span></span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Eye size={24} className="group-hover:scale-125 transition-transform" />
-                                                <span className="font-black uppercase tracking-tight">READ ONLINE</span>
-                                            </>
-                                        )}
+                                        <Eye size={24} className="group-hover:scale-125 transition-transform" />
+                                        <span className="font-black uppercase tracking-tight">READ ONLINE</span>
                                     </button>
-                                    <a
-                                        href={pdfUrl}
-                                        download
+                                    <a 
+                                        href={pdfUrl} 
+                                        download 
                                         className="btn-outline w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg group transform"
                                     >
                                         <Download size={24} className="group-hover:-translate-y-1 transition-transform" />
@@ -184,27 +114,61 @@ const BookModal = ({ book, onClose }) => {
                             </div>
                         </>
                     ) : (
-                        <div className="w-full h-full md:h-[90vh] bg-white flex flex-col relative overflow-hidden">
-                            {/* Pro-styled Header for Native Viewer */}
-                            <div className="absolute top-0 left-0 right-0 z-[100] p-4 bg-navy-900 flex items-center justify-between border-b border-white/10">
+                        <div className="w-full h-full bg-white flex flex-col relative">
+                            {/* Pro-Reader Header with 3 Requested Features in Top-Right */}
+                            <div className="w-full p-4 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110]">
                                 <button 
                                     onClick={() => setShowReader(false)}
-                                    className="px-6 py-2 bg-primary text-white rounded-xl font-black shadow-lg hover:scale-105 transition-all text-sm uppercase tracking-widest"
+                                    className="px-4 py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all"
                                 >
-                                    &larr; Exit Reader
+                                    <span>&larr; Exit Reader</span>
                                 </button>
-                                <div className="hidden md:block text-white font-bold opacity-50 text-xs tracking-widest uppercase">
-                                    Native Browser PDF View
+
+                                <div className="flex items-center space-x-2 md:space-x-6">
+                                    {/* Feature 1: Page Input */}
+                                    <div className="flex items-center space-x-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+                                        <FileText size={16} className="text-primary hidden sm:block" />
+                                        <span className="text-white/40 text-[10px] uppercase font-black tracking-widest hidden sm:block">PG</span>
+                                        <input 
+                                            type="number" 
+                                            value={page}
+                                            onChange={(e) => setPage(Math.max(1, parseInt(e.target.value) || 1))}
+                                            className="w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-sm"
+                                        />
+                                    </div>
+
+                                    {/* Feature 2: Zoom Controls */}
+                                    <div className="flex items-center bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                                        <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-2 text-white hover:bg-white/10 transition-colors"><ZoomOut size={18}/></button>
+                                        <span className="px-2 text-white text-[10px] font-black min-w-[40px] text-center">{zoom}%</span>
+                                        <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-2 text-white hover:bg-white/10 transition-colors"><ZoomIn size={18}/></button>
+                                    </div>
+
+                                    {/* Feature 3: Thumbnails Toggle */}
+                                    <button 
+                                        onClick={() => setShowThumbnails(!showThumbnails)}
+                                        className={`p-2 rounded-xl transition-all border ${showThumbnails ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
+                                        title="Toggle Thumbnails Sidebar"
+                                    >
+                                        <LayoutPanelLeft size={20} />
+                                    </button>
                                 </div>
                             </div>
                             
-                            {/* Stable Native Viewer - No Dependencies, No Errors */}
-                            <div className="flex-grow w-full h-full pt-[72px]">
+                            {/* Stable Global Viewer Area */}
+                            <div className="flex-grow w-full bg-gray-200 overflow-hidden relative">
                                 <iframe 
-                                    src={`${pdfUrl}#toolbar=1&navpanes=0`}
+                                    key={`${zoom}-${showThumbnails}-${page}`}
+                                    src={getViewerUrl()}
                                     title={book.title}
-                                    className="w-full h-full border-none"
+                                    className="w-full h-full border-none shadow-2xl"
+                                    allow="fullscreen"
                                 />
+                                <div className="absolute inset-x-0 bottom-4 pointer-events-none flex justify-center">
+                                    <div className="bg-navy-900/90 backdrop-blur-md px-4 py-2 rounded-full text-white/50 text-[10px] font-bold tracking-widest uppercase border border-white/10">
+                                        Secure Content Delivery Active
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}

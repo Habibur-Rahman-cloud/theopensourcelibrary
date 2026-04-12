@@ -1,6 +1,7 @@
-import random
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import action
@@ -35,6 +36,7 @@ class BookViewSet(viewsets.ModelViewSet):
             
         return queryset
 
+    @method_decorator(xframe_options_exempt)
     @action(detail=True, methods=['get'], url_path='view-pdf')
     def view_pdf(self, request, pk=None):
         import requests
