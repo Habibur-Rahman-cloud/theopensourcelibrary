@@ -80,62 +80,34 @@ class NewsletterViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'], url_path='test-email')
     def test_email(self, request):
-        from django.core.mail import send_mail
         from django.conf import settings
         from django.http import HttpResponse
+        import requests
         import json
         
         try:
-            user = getattr(settings, 'EMAIL_HOST_USER', None)
-            pwd = getattr(settings, 'EMAIL_HOST_PASSWORD', None)
-            if pwd: pwd = pwd.replace(' ', '') # Fix for copy-paste spaces
-            fm = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-            
-            missing = []
-            if not user: missing.append("EMAIL_HOST_USER")
-            if not pwd: missing.append("EMAIL_HOST_PASSWORD")
-            if not fm: missing.append("DEFAULT_FROM_EMAIL")
-            
-            if missing:
-                return HttpResponse(
-                    json.dumps({"error": f"Missing environment variables: {', '.join(missing)}", "tip": "Please add these to your Railway Variables tab."}),
-                    content_type="application/json",
-                    status=200 
-                )
+            resend_api_key = getattr(settings, 'RESEND_API_KEY', None)
+            if not resend_api_key:
+                return HttpResponse(json.dumps({"error": "RESEND_API_KEY missing in Railway variables"}), status=200)
 
-            from django.core.mail import get_connection
-            connection = get_connection(
-                host=settings.EMAIL_HOST,
-                port=settings.EMAIL_PORT,
-                username=user,
-                password=pwd,
-                use_tls=settings.EMAIL_USE_TLS,
-                use_ssl=settings.EMAIL_USE_SSL,
-                timeout=settings.EMAIL_TIMEOUT
-            )
-
-            send_mail(
-                'Diagnostic Check ✨',
-                'If you see this, your email configuration is working perfectly!',
-                fm,
-                [user],
-                connection=connection,
-                fail_silently=False,
-            )
-            return HttpResponse(
-                json.dumps({"success": True, "message": f"Test email sent successfully to {user}!"}),
-                content_type="application/json"
-            )
+            url = "https://api.resend.com/emails"
+            headers = {"Authorization": f"Bearer {resend_api_key}", "Content-Type": "application/json"}
+            payload = {
+                "from": "Library <onboarding@resend.dev>",
+                "to": ["thehabibur24@gmail.com"], # Testing with your own email
+                "subject": "Diagnostic Check ✨ (Resend API)",
+                "html": "<p>If you see this, Resend API is working perfectly!</p>"
+            }
+            
+            print(f"DEBUG: Diagnostic Resend attempt for thehabibur24@gmail.com")
+            r = requests.post(url, headers=headers, json=payload, timeout=10)
+            return HttpResponse(json.dumps({
+                "status": r.status_code, 
+                "response": r.json(),
+                "tip": "If status is 403, make sure you are sending only to the email you signed up with (on free tier)."
+            }), content_type="application/json")
         except Exception as e:
-            return HttpResponse(
-                json.dumps({
-                    "success": False, 
-                    "error": str(e),
-                    "tip": "Ensure you removed spaces from the 16-letter App Password."
-                }),
-                content_type="application/json",
-                status=200
-            )
+            return HttpResponse(json.dumps({"error": str(e)}), status=200)
 
     def _send_otp_email(self, email, otp):
         from django.core.mail import EmailMultiAlternatives
@@ -172,38 +144,30 @@ class NewsletterViewSet(viewsets.ViewSet):
         """
         text_content = strip_tags(html_content)
         
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-        if not from_email:
-            raise ValueError("Email configuration error: DEFAULT_FROM_EMAIL is not set.")
-
-        pwd = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
-        if pwd: pwd = pwd.replace(' ', '')
-
-        from django.core.mail import get_connection
-        connection = get_connection(
-            host=settings.EMAIL_HOST,
-            port=settings.EMAIL_PORT,
-            username=settings.EMAIL_HOST_USER,
-            password=pwd,
-            use_tls=settings.EMAIL_USE_TLS,
-            use_ssl=settings.EMAIL_USE_SSL,
-            timeout=settings.EMAIL_TIMEOUT
-        )
-
+        import requests
+        
         try:
-            msg = EmailMultiAlternatives(
-                subject, 
-                text_content, 
-                from_email, 
-                [email],
-                connection=connection
-            )
-            msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=False)
-            print(f"DEBUG: Background email sent successfully to {email}")
+            resend_api_key = getattr(settings, 'RESEND_API_KEY', None)
+            if not resend_api_key:
+                print("BACKGROUND RESEND ERROR: RESEND_API_KEY is missing!")
+                return
+
+            url = "https://api.resend.com/emails"
+            headers = {"Authorization": f"Bearer {resend_api_key}", "Content-Type": "application/json"}
+            payload = {
+                "from": "Library <onboarding@resend.dev>",
+                "to": [email],
+                "subject": subject,
+                "html": html_content
+            }
+            
+            print(f"DEBUG: Attempting Resend API call for {email}")
+            r = requests.post(url, headers=headers, json=payload, timeout=10)
+            print(f"DEBUG: Resend API finished for {email} with status {r.status_code}")
+            
         except Exception as e:
             import traceback
-            print(f"BACKGROUND EMAIL ERROR for {email}: {str(e)}")
+            print(f"RESEND API ERROR for {email}: {str(e)}")
             print(traceback.format_exc())
 
     @action(detail=False, methods=['post'])
