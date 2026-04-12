@@ -1,3 +1,4 @@
+import random
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.clickjacking import xframe_options_exempt
