@@ -117,14 +117,20 @@ class NewsletterViewSet(viewsets.ViewSet):
         if not from_email:
             raise ValueError("Email configuration error: DEFAULT_FROM_EMAIL is not set.")
 
-        msg = EmailMultiAlternatives(
-            subject, 
-            text_content, 
-            from_email, 
-            [email]
-        )
-        msg.attach_alternative(html_content, "text/html")
-        msg.send(fail_silently=False)
+        try:
+            msg = EmailMultiAlternatives(
+                subject, 
+                text_content, 
+                from_email, 
+                [email]
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+            print(f"DEBUG: Background email sent successfully to {email}")
+        except Exception as e:
+            import traceback
+            print(f"BACKGROUND EMAIL ERROR for {email}: {str(e)}")
+            print(traceback.format_exc())
 
     @action(detail=False, methods=['post'])
     def subscribe(self, request):
@@ -149,23 +155,19 @@ class NewsletterViewSet(viewsets.ViewSet):
                 
             subscriber.otp = otp
             subscriber.save()
-            print(f"DEBUG: OTP saved to database for {email}")
-            
+            # Move email sending to a background thread to prevent timeouts
             try:
-                import time
-                start_time = time.time()
-                print(f"DEBUG: Attempting to send email to {email}")
-                self._send_otp_email(email, otp)
-                duration = time.time() - start_time
-                print(f"DEBUG: Email sent successfully to {email} in {duration:.2f} seconds")
+                import threading
+                thread = threading.Thread(target=self._send_otp_email, args=(email, otp))
+                thread.daemon = True
+                thread.start()
+                print(f"DEBUG: Background email thread started for {email}")
                 return Response({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
             except Exception as e:
-                import traceback
-                print(f"Newsletter Email Error: {str(e)}")
-                print(traceback.format_exc())
-                return Response({
-                    "error": f"Failed to send email: {str(e)}. Please check your email configuration or try again later."
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                print(f"DEBUG: Failed to start background thread: {str(e)}")
+                # Fallback to synchronous if threading fails for some reason
+                self._send_otp_email(email, otp)
+                return Response({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
                 
         except Exception as e:
             import traceback
