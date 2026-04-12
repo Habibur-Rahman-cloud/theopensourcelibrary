@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText } from 'lucide-react';
 import { getMediaUrl } from '../api/library';
+import { trackPDFInteraction } from '../utils/analytics';
 
 const BookModal = ({ book, onClose }) => {
     const [activeTab, setActiveTab] = useState('summary');
@@ -96,7 +97,10 @@ const BookModal = ({ book, onClose }) => {
 
                                 <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 mt-auto">
                                     <button 
-                                        onClick={() => setShowReader(true)}
+                                        onClick={() => {
+                                            trackPDFInteraction('open', book);
+                                            setShowReader(true);
+                                        }}
                                         className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg shadow-xl shadow-primary/20 group transform"
                                     >
                                         <Eye size={24} className="group-hover:scale-125 transition-transform" />
@@ -105,6 +109,7 @@ const BookModal = ({ book, onClose }) => {
                                     <a 
                                         href={pdfUrl} 
                                         download 
+                                        onClick={() => trackPDFInteraction('download', book)}
                                         className="btn-outline w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg group transform"
                                     >
                                         <Download size={24} className="group-hover:-translate-y-1 transition-transform" />

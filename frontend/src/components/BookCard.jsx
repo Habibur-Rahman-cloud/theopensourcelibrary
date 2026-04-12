@@ -2,8 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { LayoutTemplate } from 'lucide-react';
 import { getMediaUrl } from '../api/library';
+import { trackBookClick } from '../utils/analytics';
 
 const BookCard = ({ book, index, onView }) => {
+    const handleClick = () => {
+        trackBookClick(book);
+        onView(book);
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -11,7 +17,7 @@ const BookCard = ({ book, index, onView }) => {
             transition={{ delay: index * 0.05 }}
             viewport={{ once: true }}
             className="group cursor-pointer"
-            onClick={() => onView(book)}
+            onClick={handleClick}
         >
             {/* Book Cover */}
             <div className="relative overflow-hidden rounded-2xl aspect-[2/3] bg-navy-800 shadow-lg shadow-black/30 group-hover:shadow-2xl group-hover:shadow-primary/20 transition-all duration-500">

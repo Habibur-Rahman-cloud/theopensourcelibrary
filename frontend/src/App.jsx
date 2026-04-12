@@ -14,6 +14,7 @@ import TermsOfService from './pages/legal/TermsOfService';
 import NotFound from './pages/NotFound';
 import AllCategories from './pages/AllCategories';
 import AllBooks from './pages/AllBooks';
+import { trackPageView } from './utils/analytics';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -55,11 +56,22 @@ function ScrollHandler() {
   return null;
 }
 
+function AnalyticsHandler() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
+
+  return null;
+}
+
 function App() {
   return (
     <ThemeProvider>
       <Router>
         <ScrollHandler />
+        <AnalyticsHandler />
         <div className="min-h-screen flex flex-col app-bg text-body selection:bg-primary selection:text-white transition-colors duration-300">
           <Navbar />
           <main className="flex-grow">
