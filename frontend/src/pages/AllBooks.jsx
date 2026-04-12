@@ -30,10 +30,13 @@ const AllBooks = () => {
         fetchBooks();
     }, []);
 
-    const filteredBooks = books.filter(book => 
-        (book.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (book.author_name || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredBooks = (books || []).filter(book => {
+        if (!book) return false;
+        const query = (searchTerm || '').toLowerCase();
+        const title = (book.title || '').toLowerCase();
+        const summary = (book.summary || '').toLowerCase();
+        return title.includes(query) || summary.includes(query);
+    });
 
     if (loading) return <Loader />;
 

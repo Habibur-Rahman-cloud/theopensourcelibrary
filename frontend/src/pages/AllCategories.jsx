@@ -28,8 +28,8 @@ const AllCategories = () => {
         fetchCats();
     }, []);
 
-    const filteredCategories = categories.filter(cat => 
-        (cat.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredCategories = (categories || []).filter(cat => 
+        cat && (cat.name || '').toLowerCase().includes((searchTerm || '').toLowerCase())
     );
 
     if (loading) return <Loader />;
