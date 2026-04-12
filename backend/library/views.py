@@ -19,10 +19,12 @@ from .serializers import (
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    lookup_field = 'slug'
 
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all().order_by('-created_at')
     serializer_class = BookSerializer
+    lookup_field = 'slug'
 
     def get_queryset(self):
         queryset = Book.objects.all().order_by('-created_at')

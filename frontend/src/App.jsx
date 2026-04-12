@@ -14,6 +14,7 @@ import TermsOfService from './pages/legal/TermsOfService';
 import NotFound from './pages/NotFound';
 import AllCategories from './pages/AllCategories';
 import AllBooks from './pages/AllBooks';
+import BookDetails from './pages/BookDetails';
 import { trackPageView } from './utils/analytics';
 
 function AnimatedRoutes() {
@@ -30,6 +31,7 @@ function AnimatedRoutes() {
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/categories" element={<AllCategories />} />
         <Route path="/books" element={<AllBooks />} />
+        <Route path="/book/:slug" element={<BookDetails />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
