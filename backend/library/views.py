@@ -109,7 +109,9 @@ class NewsletterViewSet(viewsets.ViewSet):
                 port=settings.EMAIL_PORT,
                 username=user,
                 password=pwd,
-                use_tls=settings.EMAIL_USE_TLS
+                use_tls=settings.EMAIL_USE_TLS,
+                use_ssl=settings.EMAIL_USE_SSL,
+                timeout=settings.EMAIL_TIMEOUT
             )
 
             send_mail(
@@ -183,7 +185,9 @@ class NewsletterViewSet(viewsets.ViewSet):
             port=settings.EMAIL_PORT,
             username=settings.EMAIL_HOST_USER,
             password=pwd,
-            use_tls=settings.EMAIL_USE_TLS
+            use_tls=settings.EMAIL_USE_TLS,
+            use_ssl=settings.EMAIL_USE_SSL,
+            timeout=settings.EMAIL_TIMEOUT
         )
 
         try:
