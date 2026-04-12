@@ -1,4 +1,5 @@
-import random
+from django.http import StreamingHttpResponse
+from django.shortcuts import get_object_or_404, render
 from django.core.mail import send_mail
 from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import action
@@ -32,6 +33,32 @@ class BookViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(title__icontains=search_query) # Basic search by title
             
         return queryset
+
+    @action(detail=True, methods=['get'], url_path='view-pdf')
+    def view_pdf(self, request, pk=None):
+        import requests
+        book = get_object_or_404(Book, pk=pk)
+        if not book.pdf_file:
+            return Response({"error": "No PDF file associated with this book"}, status=status.HTTP_404_NOT_FOUND)
+            
+        pdf_url = book.pdf_file.url
+        
+        # We use a stream to fetch from Cloudinary and pass it to the user
+        try:
+            # We don't use credentials/auth here as we are fetching the public-but-blocked URL
+            # but we are doing it from our server which is usually not blocked by same-origin/CDN rules
+            r = requests.get(pdf_url, stream=True, timeout=20)
+            r.raise_for_status()
+            
+            response = StreamingHttpResponse(
+                r.iter_content(chunk_size=8192),
+                content_type='application/pdf'
+            )
+            # 'inline' allows the browser to show it in the viewer
+            response['Content-Disposition'] = f'inline; filename="{book.title}.pdf"'
+            return response
+        except Exception as e:
+            return Response({"error": f"Failed to fetch PDF from storage: {str(e)}"}, status=status.HTTP_502_BAD_GATEWAY)
 
 class RequestedBookViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = RequestedBook.objects.all().order_by('-created_at')

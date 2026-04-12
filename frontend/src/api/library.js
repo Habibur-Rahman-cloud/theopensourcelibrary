@@ -59,19 +59,21 @@ export const submitBookRequest = async ({ title, author_name, email }) => {
   return response.data;
 };
 
-export const getMediaUrl = (url) => {
+export const getMediaUrl = (url, bookId = null) => {
   if (!url) return null;
+
+  // Use backend proxy for PDFs if bookId is provided to bypass Cloudinary delivery blocks
+  if (bookId && url.includes('cloudinary.com') && url.includes('/pdfs/')) {
+    return `${API_BASE}books/${bookId}/view-pdf/`;
+  }
+
   // If it's already a full URL (like from Cloudinary or an external source)
   if (url.startsWith('http://') || url.startsWith('https://')) {
     let clean = url;
     
-    // Fix: Cloudinary often stores PDFs as 'raw' resources. 
-    // If the URL contains '/image/upload/' and is a PDF, we try to use '/raw/upload/'
+    // Fallback/Legacy fix for direct Cloudinary access
     if (clean.includes('cloudinary.com') && clean.includes('/image/upload/') && clean.includes('/pdfs/')) {
       clean = clean.replace('/image/upload/', '/raw/upload/');
-      
-      // For raw files, Cloudinary usually serves them by their public ID alone.
-      // We only append .pdf if it's not already there.
       if (!clean.toLowerCase().endsWith('.pdf')) {
         clean = `${clean}.pdf`;
       }

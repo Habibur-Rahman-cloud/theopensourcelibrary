@@ -78,7 +78,7 @@ const BookModal = ({ book, onClose }) => {
         }
     };
 
-    const pdfUrl = getMediaUrl(book.pdf_file);
+    const pdfUrl = getMediaUrl(book.pdf_file, book.id);
 
     return (
         <AnimatePresence>
