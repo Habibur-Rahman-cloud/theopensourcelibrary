@@ -19,8 +19,56 @@ const BookModal = ({ book, onClose }) => {
         }
     });
 
-    // Optimized: Do NOT use useMemo on the plugin directly as it calls hooks internally.
-    const defaultLayoutPluginInstance = defaultLayoutPlugin();
+    // Optimized: Custom toolbar layout as requested by the user
+    const defaultLayoutPluginInstance = defaultLayoutPlugin({
+        renderToolbar: (Toolbar) => (
+            <Toolbar>
+                {(slots) => {
+                    const {
+                        CurrentPageInput,
+                        GoToNextPage,
+                        GoToPreviousPage,
+                        NumberOfPages,
+                        ZoomIn,
+                        ZoomOut,
+                        EnterFullScreen,
+                        SwitchSidebar,
+                    } = slots;
+                    return (
+                        <div className="flex items-center justify-between w-full px-2 md:px-6 py-2 bg-navy-900 border-b border-white/5">
+                            {/* Left Side - Minimal/None as requested */}
+                            <div className="w-24 md:w-32"></div>
+
+                            {/* Center - Page Navigation */}
+                            <div className="flex items-center space-x-1 md:space-x-3 bg-white/5 py-1 px-2 md:px-4 rounded-xl border border-white/10">
+                                <GoToPreviousPage />
+                                <div className="flex items-center space-x-1 text-white font-black text-xs md:text-sm min-w-fit">
+                                    <div className="w-10">
+                                        <CurrentPageInput />
+                                    </div>
+                                    <span className="opacity-40">/</span>
+                                    <NumberOfPages />
+                                </div>
+                                <GoToNextPage />
+                            </div>
+
+                            {/* Right Side - Tools (Zoom, Thumbnail, Fullscreen) */}
+                            <div className="flex items-center space-x-0.5 md:space-x-2">
+                                <div className="hidden sm:flex items-center space-x-1 mr-2 px-2 border-r border-white/10">
+                                    <ZoomOut />
+                                    <ZoomIn />
+                                </div>
+                                <SwitchSidebar />
+                                <EnterFullScreen />
+                            </div>
+                        </div>
+                    );
+                }}
+            </Toolbar>
+        ),
+        sidebarTabs: (defaultTabs) => 
+            defaultTabs.filter((tab) => tab.contentKey === 'thumbnails'),
+    });
 
     const handlePageChange = (e) => {
         if (book && showReader) {
