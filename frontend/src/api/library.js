@@ -66,11 +66,12 @@ export const getMediaUrl = (url) => {
     let clean = url;
     
     // Fix: Cloudinary often stores PDFs as 'raw' resources. 
-    // If the URL contains '/image/upload/' and is a PDF, we must use '/raw/upload/'
+    // If the URL contains '/image/upload/' and is a PDF, we try to use '/raw/upload/'
     if (clean.includes('cloudinary.com') && clean.includes('/image/upload/') && clean.includes('/pdfs/')) {
       clean = clean.replace('/image/upload/', '/raw/upload/');
       
-      // Also ensure it doesn't have a double extension if it already had one
+      // For raw files, Cloudinary usually serves them by their public ID alone.
+      // We only append .pdf if it's not already there.
       if (!clean.toLowerCase().endsWith('.pdf')) {
         clean = `${clean}.pdf`;
       }
