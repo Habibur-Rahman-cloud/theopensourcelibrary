@@ -16,10 +16,10 @@ const API_BASE = normalizeApiBase(import.meta.env.VITE_API_BASE);
 const defaultMediaBase =
   API_BASE.replace(/\/api\/?$/i, '').replace(/\/+$/, '') || 'http://localhost:8000';
 const MEDIA_BASE = (import.meta.env.VITE_MEDIA_BASE || defaultMediaBase).trim().replace(/\/+$/, '');
-
+console.log('API Client Version: 2.1.0 (31s timeout)');
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 30000, // Increased to 30s for email sending in production
+  timeout: 31000, // Unique 31s to distinguish from old 10s or 30s
 });
 
 export const getCategories = async () => {
