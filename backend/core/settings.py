@@ -17,13 +17,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-dev-key')
 
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('1', 'true', 'yes')
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = [
-    h.strip()
-    for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-    if h.strip()
-]
+ALLOWED_HOSTS = ["api.theopensourcelibrary.com", "theopensourcelibrary-production.up.railway.app", "localhost", "127.0.0.1"]
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -39,10 +35,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -108,18 +104,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    CORS_ALLOW_ALL_ORIGINS = False
-    _cors = os.getenv(
-        'CORS_ALLOWED_ORIGINS',
-        'https://theopensourcelibrary.com,https://www.theopensourcelibrary.com',
-    )
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(',') if o.strip()]
+CORS_ALLOW_ALL_ORIGINS = True
 
-_csrf = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://api.theopensourcelibrary.com')
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(',') if o.strip()]
+CSRF_TRUSTED_ORIGINS = ["https://api.theopensourcelibrary.com", "https://theopensourcelibrary.pages.dev"]
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
