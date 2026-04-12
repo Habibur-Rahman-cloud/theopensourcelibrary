@@ -125,32 +125,44 @@ class NewsletterViewSet(viewsets.ViewSet):
     def subscribe(self, request):
         try:
             email_raw = request.data.get('email')
+            print(f"DEBUG: Newsletter subscribe attempt for: {email_raw}")
+            
             if not email_raw:
                 return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
             
             email = email_raw.strip().lower()
             otp = str(random.randint(100000, 999999))
+            print(f"DEBUG: Generated OTP for {email}")
             
             # Update or create subscriber with normalized email
             subscriber, created = Newsletter.objects.get_or_create(email=email)
+            print(f"DEBUG: Subscriber record {'created' if created else 'found'} for {email}")
             
             if subscriber.is_verified:
+                print(f"DEBUG: {email} is already verified")
                 return Response({"error": "This email is already subscribed."}, status=status.HTTP_400_BAD_REQUEST)
                 
             subscriber.otp = otp
             subscriber.save()
+            print(f"DEBUG: OTP saved to database for {email}")
             
             try:
+                print(f"DEBUG: Attempting to send email to {email}")
                 self._send_otp_email(email, otp)
+                print(f"DEBUG: Email sent successfully to {email}")
                 return Response({"message": "OTP sent to your email"}, status=status.HTTP_200_OK)
             except Exception as e:
+                import traceback
                 print(f"Newsletter Email Error: {str(e)}")
+                print(traceback.format_exc())
                 return Response({
                     "error": f"Failed to send email: {str(e)}. Please check your email configuration or try again later."
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
         except Exception as e:
+            import traceback
             print(f"Newsletter Subscribe Error: {str(e)}")
+            print(traceback.format_exc())
             return Response({
                 "error": f"Server error during subscription: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

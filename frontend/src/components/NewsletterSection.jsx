@@ -22,9 +22,11 @@ const NewsletterSection = () => {
       setIsVerifying(true);
       setMessage('OTP sent to your email');
     } catch (err) {
+      console.error('Newsletter Subscription Error:', err);
       setStatus('error');
-      setMessage(err.response?.data?.error || 'Something went wrong');
-      setTimeout(() => setStatus('idle'), 3000);
+      const errorMsg = err.response?.data?.error || err.message || 'Something went wrong. Please check your connection.';
+      setMessage(errorMsg);
+      setTimeout(() => setStatus('idle'), 5000);
     }
   };
 
@@ -42,8 +44,10 @@ const NewsletterSection = () => {
       setIsVerifying(false);
       setTimeout(() => setStatus('idle'), 4000);
     } catch (err) {
+      console.error('Newsletter Verification Error:', err);
       setStatus('error');
-      setMessage(err.response?.data?.error || 'Invalid OTP');
+      const errorMsg = err.response?.data?.error || 'Invalid OTP. Please try again.';
+      setMessage(errorMsg);
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
