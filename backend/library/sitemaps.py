@@ -11,7 +11,7 @@ class StaticViewSitemap(Sitemap):
         return ['/', '/categories', '/books', '/request-book', '/become-contributor']
 
     def location(self, item):
-        return item
+        return f"https://theopensourcelibrary.com{item}"
 
 class CategorySitemap(Sitemap):
     changefreq = "weekly"
@@ -21,7 +21,7 @@ class CategorySitemap(Sitemap):
         return Category.objects.all()
 
     def location(self, obj):
-        return f"/category/{obj.slug}"
+        return f"https://theopensourcelibrary.com/category/{obj.slug}"
 
 class BookSitemap(Sitemap):
     changefreq = "monthly"
@@ -31,10 +31,7 @@ class BookSitemap(Sitemap):
         return Book.objects.all().order_by('-created_at')
 
     def location(self, obj):
-        # Adjust this match your React routing for book details
-        # If books open in a modal on the home/category page, you might want to 
-        # give them their own dedicated URLs for indexing.
-        return f"/book/{obj.slug}"
+        return f"https://theopensourcelibrary.com/book/{obj.slug}"
 
     def lastmod(self, obj):
         return obj.created_at
