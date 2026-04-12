@@ -12,6 +12,8 @@ import BecomeContributor from './pages/support/BecomeContributor';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import TermsOfService from './pages/legal/TermsOfService';
 import NotFound from './pages/NotFound';
+import AllCategories from './pages/AllCategories';
+import AllBooks from './pages/AllBooks';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -25,6 +27,8 @@ function AnimatedRoutes() {
         <Route path="/become-contributor" element={<BecomeContributor />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/categories" element={<AllCategories />} />
+        <Route path="/books" element={<AllBooks />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

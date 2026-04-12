@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { getCategories, getBooks } from '../api/library';
 import CategoryCard from '../components/CategoryCard';
 import BookCard from '../components/BookCard';
@@ -12,8 +12,6 @@ const Home = () => {
     const [categories, setCategories] = useState([]);
     const [books, setBooks] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showAllCategories, setShowAllCategories] = useState(false);
-    const [showAllBooks, setShowAllBooks] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
     const [searchParams] = useSearchParams();
     const searchQuery = searchParams.get('search') || '';
@@ -139,16 +137,14 @@ const Home = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {categories.slice(0, showAllCategories ? undefined : 2).map((cat, idx) => (
+                            {categories.slice(0, 2).map((cat, idx) => (
                                 <CategoryCard key={cat.id} category={cat} index={idx} />
                             ))}
                             
-                            {!showAllCategories && categories.length > 2 && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
+                            {categories.length > 2 && (
+                                <Link
+                                    to="/categories"
                                     className="block relative overflow-hidden glass-card p-8 rounded-3xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/20 aspect-video flex flex-col items-center justify-center space-y-4 cursor-pointer group"
-                                    onClick={() => setShowAllCategories(true)}
                                 >
                                     <div className="text-5xl group-hover:scale-110 transition-transform duration-500">📂</div>
                                     <h3 className="text-2xl font-black text-heading leading-tight text-center">
@@ -160,7 +156,7 @@ const Home = () => {
                                         <path d="M5 12h14m-7-7 7 7-7 7"/>
                                        </svg>
                                     </div>
-                                </motion.div>
+                                </Link>
                             )}
                         </div>
                     </section>
@@ -174,12 +170,9 @@ const Home = () => {
                             </div>
                         </div>
 
-                        <div className={showAllBooks ? 
-                            "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8" : 
-                            "flex overflow-x-auto pb-8 gap-6 md:gap-8 no-scrollbar scroll-smooth snap-x"
-                        }>
-                            {books.slice(0, showAllBooks ? undefined : 3).map((book, idx) => (
-                                <div key={book.id} className={!showAllBooks ? "min-w-[280px] sm:min-w-[320px] snap-start" : ""}>
+                        <div className="flex overflow-x-auto pb-8 gap-6 md:gap-8 no-scrollbar scroll-smooth snap-x">
+                            {books.slice(0, 3).map((book, idx) => (
+                                <div key={book.id} className="min-w-[280px] sm:min-w-[320px] snap-start">
                                     <BookCard 
                                         book={book} 
                                         index={idx} 
@@ -188,12 +181,10 @@ const Home = () => {
                                 </div>
                             ))}
 
-                            {!showAllBooks && books.length > 3 && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
+                            {books.length > 3 && (
+                                <Link
+                                    to="/books"
                                     className="min-w-[200px] flex flex-col items-center justify-center glass-card rounded-3xl border-2 border-dashed border-accent/20 hover:border-accent/40 transition-all cursor-pointer group snap-start"
-                                    onClick={() => setShowAllBooks(true)}
                                 >
                                     <div className="text-4xl mb-4 group-hover:rotate-12 transition-transform duration-500">🚀</div>
                                     <h3 className="text-xl font-black text-heading text-center">
@@ -203,7 +194,7 @@ const Home = () => {
                                     <div className="mt-6 p-3 bg-accent/10 rounded-full group-hover:bg-accent group-hover:text-white transition-all">
                                         <Sparkles size={20} />
                                     </div>
-                                </motion.div>
+                                </Link>
                             )}
                         </div>
                     </section>
