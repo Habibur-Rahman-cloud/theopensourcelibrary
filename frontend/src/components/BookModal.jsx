@@ -11,7 +11,7 @@ const BookModal = ({ book, onClose }) => {
     const [showThumbnails, setShowThumbnails] = useState(false);
     const [page, setPage] = useState(1);
 
-    const pdfUrl = getMediaUrl(book.pdf_file, book.id);
+    const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
     // Feature toggles for the native viewer
     // Fragments: #page=X&zoom=Y&pagemode=thumbs/bookmarks

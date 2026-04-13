@@ -59,12 +59,12 @@ export const submitBookRequest = async ({ title, author_name, email }) => {
   return response.data;
 };
 
-export const getMediaUrl = (url, bookId = null) => {
+export const getMediaUrl = (url, bookSlugOrId = null) => {
   if (!url) return null;
 
-  // Use backend proxy for PDFs if bookId is provided to bypass Cloudinary delivery blocks
-  if (bookId && url.includes('cloudinary.com') && url.includes('/pdfs/')) {
-    return `${API_BASE}books/${bookId}/view-pdf/`;
+  // Use backend proxy for PDFs if bookSlugOrId is provided to bypass Cloudinary delivery blocks
+  if (bookSlugOrId && url.includes('cloudinary.com') && url.includes('/pdfs/')) {
+    return `${API_BASE}books/${bookSlugOrId}/view-pdf/`;
   }
 
   // If it's already a full URL (like from Cloudinary or an external source)
