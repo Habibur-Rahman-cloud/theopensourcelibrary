@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText, BookOpen } from 'lucide-react';
+import { X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText, BookOpen, BookmarkCheck } from 'lucide-react';
 import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
 import { getReadingProgress, saveReadingProgress } from '../utils/readingProgress';
@@ -24,15 +24,25 @@ const BookModal = ({ book, onClose }) => {
         }
     }, [book.slug]);
 
-    // Save progress when closing reader
-    const handleCloseReader = () => {
-        setShowReader(false);
+    // Save progress manually or when closing
+    const handleSaveProgress = () => {
         saveReadingProgress(book.slug, page, {
             title: book.title,
             cover_image: book.cover_image,
             category_name: book.category_name
         });
         setSavedProgress(getReadingProgress(book.slug));
+        // Show brief visual feedback
+        const btn = document.getElementById('save-progress-btn');
+        if (btn) {
+            btn.classList.add('bg-green-500');
+            setTimeout(() => btn.classList.remove('bg-green-500'), 500);
+        }
+    };
+
+    const handleCloseReader = () => {
+        handleSaveProgress();
+        setShowReader(false);
     };
 
     const handleOpenReader = () => {
@@ -175,13 +185,25 @@ const BookModal = ({ book, onClose }) => {
                             {/* Pro-Reader Header - Compact Responsive */}
                             <div className="w-full p-2 sm:p-3 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110] gap-2">
                                 {/* Close Button - Compact */}
-                                <button 
+                                <button
                                     onClick={handleCloseReader}
                                     className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
                                 >
                                     <X size={16} className="sm:hidden" />
                                     <span className="hidden sm:inline">&larr;</span>
                                     <span className="text-xs sm:text-sm">Close</span>
+                                </button>
+
+                                {/* Save Progress Button */}
+                                <button
+                                    id="save-progress-btn"
+                                    onClick={handleSaveProgress}
+                                    className="px-3 py-2 sm:px-4 sm:py-2 bg-white/10 text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:bg-white/20 active:scale-95 transition-all text-xs sm:text-sm whitespace-nowrap border border-white/20"
+                                    title="Save current page"
+                                >
+                                    <BookmarkCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                    <span className="hidden sm:inline">Save</span>
+                                    <span className="sm:hidden">Save</span>
                                 </button>
 
                                 {/* Controls - Compact on mobile */}

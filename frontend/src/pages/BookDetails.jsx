@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Share2, Eye, ArrowLeft, Bookmark, Calendar, Inbox, X, ZoomIn, ZoomOut, FileText, LayoutPanelLeft, BookOpen } from 'lucide-react';
+import { Share2, Eye, ArrowLeft, Bookmark, Calendar, Inbox, X, ZoomIn, ZoomOut, FileText, LayoutPanelLeft, BookOpen, BookmarkCheck } from 'lucide-react';
 import axios from 'axios';
 import Loader from '../components/Loader';
 import { getMediaUrl } from '../api/library';
@@ -29,9 +29,8 @@ const BookDetails = () => {
         }
     }, [book]);
 
-    // Save progress when closing reader
-    const handleCloseReader = () => {
-        setShowReader(false);
+    // Save progress manually or when closing
+    const handleSaveProgress = () => {
         if (book) {
             saveReadingProgress(book.slug, page, {
                 title: book.title,
@@ -39,7 +38,18 @@ const BookDetails = () => {
                 category_name: book.category_name
             });
             setSavedProgress(getReadingProgress(book.slug));
+            // Show brief visual feedback
+            const btn = document.getElementById('save-progress-btn');
+            if (btn) {
+                btn.classList.add('bg-green-500');
+                setTimeout(() => btn.classList.remove('bg-green-500'), 500);
+            }
         }
+    };
+
+    const handleCloseReader = () => {
+        handleSaveProgress();
+        setShowReader(false);
     };
 
     useEffect(() => {
@@ -237,15 +247,29 @@ const BookDetails = () => {
                 <div className="fixed inset-0 z-[100] bg-white flex flex-col">
                     {/* Compact Responsive Header */}
                     <div className="w-full p-2 sm:p-3 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110] gap-2">
-                        {/* Close Button - Compact */}
-                        <button
-                            onClick={handleCloseReader}
-                            className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
-                        >
-                            <X size={16} className="sm:hidden" />
-                            <span className="hidden sm:inline">&larr;</span>
-                            <span className="text-xs sm:text-sm">Close</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {/* Close Button - Compact */}
+                            <button
+                                onClick={handleCloseReader}
+                                className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
+                            >
+                                <X size={16} className="sm:hidden" />
+                                <span className="hidden sm:inline">&larr;</span>
+                                <span className="text-xs sm:text-sm">Close</span>
+                            </button>
+
+                            {/* Save Progress Button */}
+                            <button
+                                id="save-progress-btn"
+                                onClick={handleSaveProgress}
+                                className="px-3 py-2 sm:px-4 sm:py-2 bg-white/10 text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:bg-white/20 active:scale-95 transition-all text-xs sm:text-sm whitespace-nowrap border border-white/20"
+                                title="Save current page"
+                            >
+                                <BookmarkCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                <span className="hidden sm:inline">Save</span>
+                                <span className="sm:hidden">Save</span>
+                            </button>
+                        </div>
 
                         {/* Controls - Compact on mobile */}
                         <div className="flex items-center space-x-1 sm:space-x-3">
