@@ -130,42 +130,46 @@ const BookModal = ({ book, onClose }) => {
                         </>
                     ) : (
                         <div className="w-full h-full bg-white flex flex-col relative">
-                            {/* Pro-Reader Header with 3 Requested Features in Top-Right */}
-                            <div className="w-full p-4 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110]">
+                            {/* Pro-Reader Header - Compact Responsive */}
+                            <div className="w-full p-2 sm:p-3 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110] gap-2">
+                                {/* Close Button - Compact */}
                                 <button 
                                     onClick={() => setShowReader(false)}
-                                    className="px-4 py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                    className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
                                 >
-                                    <span>&larr; Exit Reader</span>
+                                    <X size={16} className="sm:hidden" />
+                                    <span className="hidden sm:inline">&larr;</span>
+                                    <span className="text-xs sm:text-sm">Close</span>
                                 </button>
 
-                                <div className="flex items-center space-x-2 md:space-x-6">
-                                    {/* Feature 1: Page Input */}
-                                    <div className="flex items-center space-x-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
-                                        <FileText size={16} className="text-primary hidden sm:block" />
-                                        <span className="text-white/40 text-[10px] uppercase font-black tracking-widest hidden sm:block">PG</span>
+                                {/* Controls - Compact on mobile */}
+                                <div className="flex items-center space-x-1 sm:space-x-3">
+                                    {/* Page Input */}
+                                    <div className="flex items-center space-x-1 bg-white/5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10">
+                                        <FileText size={14} className="text-primary" />
+                                        <span className="text-white/40 text-[10px] uppercase font-black tracking-wider hidden sm:inline">PG</span>
                                         <input 
                                             type="number" 
                                             value={page}
                                             onChange={(e) => setPage(Math.max(1, parseInt(e.target.value) || 1))}
-                                            className="w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-sm"
+                                            className="w-8 sm:w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-xs sm:text-sm"
                                         />
                                     </div>
 
-                                    {/* Feature 2: Zoom Controls */}
-                                    <div className="flex items-center bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-                                        <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-2 text-white hover:bg-white/10 transition-colors"><ZoomOut size={18}/></button>
-                                        <span className="px-2 text-white text-[10px] font-black min-w-[40px] text-center">{zoom}%</span>
-                                        <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-2 text-white hover:bg-white/10 transition-colors"><ZoomIn size={18}/></button>
+                                    {/* Zoom Controls */}
+                                    <div className="flex items-center bg-white/5 rounded-lg sm:rounded-xl border border-white/10 overflow-hidden">
+                                        <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomOut size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
+                                        <span className="px-1 sm:px-2 text-white text-[10px] font-black min-w-[32px] sm:min-w-[40px] text-center">{zoom}%</span>
+                                        <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomIn size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
                                     </div>
 
-                                    {/* Feature 3: Thumbnails Toggle */}
+                                    {/* Thumbnails Toggle */}
                                     <button 
                                         onClick={() => setShowThumbnails(!showThumbnails)}
-                                        className={`p-2 rounded-xl transition-all border ${showThumbnails ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
-                                        title="Toggle Thumbnails Sidebar"
+                                        className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all border ${showThumbnails ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
+                                        title="Toggle Thumbnails"
                                     >
-                                        <LayoutPanelLeft size={20} />
+                                        <LayoutPanelLeft size={18} className="sm:w-[20px] sm:h-[20px]" />
                                     </button>
                                 </div>
                             </div>
