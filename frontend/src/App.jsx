@@ -15,6 +15,7 @@ import NotFound from './pages/NotFound';
 import AllCategories from './pages/AllCategories';
 import AllBooks from './pages/AllBooks';
 import BookDetails from './pages/BookDetails';
+import History from './pages/History';
 import { trackPageView } from './utils/analytics';
 
 function AnimatedRoutes() {
@@ -32,6 +33,7 @@ function AnimatedRoutes() {
         <Route path="/categories" element={<AllCategories />} />
         <Route path="/books" element={<AllBooks />} />
         <Route path="/book/:slug" element={<BookDetails />} />
+        <Route path="/history" element={<History />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

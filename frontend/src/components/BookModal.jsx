@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText } from 'lucide-react';
+import { X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText, BookOpen } from 'lucide-react';
 import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
+import { getReadingProgress, saveReadingProgress } from '../utils/readingProgress';
 
 const BookModal = ({ book, onClose }) => {
     const [activeTab, setActiveTab] = useState('summary');
@@ -10,8 +11,39 @@ const BookModal = ({ book, onClose }) => {
     const [zoom, setZoom] = useState(100);
     const [showThumbnails, setShowThumbnails] = useState(false);
     const [page, setPage] = useState(1);
+    const [savedProgress, setSavedProgress] = useState(null);
 
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
+
+    // Load saved progress on mount
+    useEffect(() => {
+        const progress = getReadingProgress(book.slug);
+        if (progress) {
+            setSavedProgress(progress);
+            setPage(progress.page);
+        }
+    }, [book.slug]);
+
+    // Save progress when closing reader
+    const handleCloseReader = () => {
+        setShowReader(false);
+        saveReadingProgress(book.slug, page, {
+            title: book.title,
+            cover_image: book.cover_image,
+            category_name: book.category_name
+        });
+        setSavedProgress(getReadingProgress(book.slug));
+    };
+
+    const handleOpenReader = () => {
+        trackPDFInteraction('open', book);
+        setShowReader(true);
+    };
+
+    const handleResumeReading = () => {
+        trackPDFInteraction('resume', book);
+        setShowReader(true);
+    };
 
     // Feature toggles for the native viewer
     // toolbar=0 hides the native PDF toolbar (download, print, etc.)
@@ -96,16 +128,26 @@ const BookModal = ({ book, onClose }) => {
                                 </motion.div>
 
                                 <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 mt-auto">
-                                    <button 
-                                        onClick={() => {
-                                            trackPDFInteraction('open', book);
-                                            setShowReader(true);
-                                        }}
-                                        className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg shadow-xl shadow-primary/20 group transform"
-                                    >
-                                        <Eye size={24} className="group-hover:scale-125 transition-transform" />
-                                        <span className="font-black uppercase tracking-tight">READ ONLINE</span>
-                                    </button>
+                                    {savedProgress ? (
+                                        <button 
+                                            onClick={handleResumeReading}
+                                            className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg shadow-xl shadow-primary/20 group transform"
+                                        >
+                                            <BookOpen size={24} className="group-hover:scale-125 transition-transform" />
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-black uppercase tracking-tight text-sm">RESUME READING</span>
+                                                <span className="text-xs text-white/80">Page {savedProgress.page}</span>
+                                            </div>
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={handleOpenReader}
+                                            className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg shadow-xl shadow-primary/20 group transform"
+                                        >
+                                            <Eye size={24} className="group-hover:scale-125 transition-transform" />
+                                            <span className="font-black uppercase tracking-tight">READ ONLINE</span>
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => {
                                             const shareData = {
@@ -134,7 +176,7 @@ const BookModal = ({ book, onClose }) => {
                             <div className="w-full p-2 sm:p-3 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110] gap-2">
                                 {/* Close Button - Compact */}
                                 <button 
-                                    onClick={() => setShowReader(false)}
+                                    onClick={handleCloseReader}
                                     className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
                                 >
                                     <X size={16} className="sm:hidden" />

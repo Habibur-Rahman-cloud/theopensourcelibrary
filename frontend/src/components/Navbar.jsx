@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, BookOpen, Menu, X, Sun, Moon, ArrowRight } from 'lucide-react';
+import { Search, BookOpen, Menu, X, Sun, Moon, ArrowRight, History } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { getBooks, getMediaUrl } from '../api/library';
@@ -206,6 +206,10 @@ const Navbar = () => {
                 <div className="flex items-center space-x-4">
                     <div className="hidden lg:flex items-center space-x-6 font-medium text-muted">
                         <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+                        <Link to="/history" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                            <History size={16} />
+                            History
+                        </Link>
                     </div>
 
                     {/* Theme toggle */}
@@ -324,6 +328,10 @@ const Navbar = () => {
                         </AnimatePresence>
                     </div>
                     <Link to="/" onClick={() => { setIsMenuOpen(false); setShowSuggestions(false); handleClearSearch(); }} className="text-heading hover:text-primary p-2">Home</Link>
+                    <Link to="/history" onClick={() => { setIsMenuOpen(false); setShowSuggestions(false); handleClearSearch(); }} className="text-heading hover:text-primary p-2 flex items-center gap-2">
+                        <History size={18} />
+                        History
+                    </Link>
                 </motion.div>
             )}
         </nav>
