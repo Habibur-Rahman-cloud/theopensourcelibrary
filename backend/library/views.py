@@ -68,6 +68,8 @@ class BookViewSet(viewsets.ModelViewSet):
             )
             # 'inline' allows the browser to show it in the viewer
             response['Content-Disposition'] = f'inline; filename="{book.title}.pdf"'
+            # Allow embedding from frontend domains (CSP frame-ancestors supports multiple origins)
+            response['Content-Security-Policy'] = "frame-ancestors 'self' https://theopensourcelibrary.com https://www.theopensourcelibrary.com https://theopensourcelibrary.pages.dev;"
             return response
         except Exception as e:
             return Response({"error": f"Failed to fetch PDF from storage: {str(e)}"}, status=status.HTTP_502_BAD_GATEWAY)

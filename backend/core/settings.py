@@ -145,7 +145,7 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
-    X_FRAME_OPTIONS = 'DENY'
+    # X_FRAME_OPTIONS removed - handled per-view with @xframe_options_exempt
 
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
