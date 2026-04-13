@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Download, Eye, ArrowLeft, Bookmark, Calendar, Inbox, X, ZoomIn, ZoomOut, FileText, LayoutPanelLeft } from 'lucide-react';
+import { Share2, Eye, ArrowLeft, Bookmark, Calendar, Inbox, X, ZoomIn, ZoomOut, FileText, LayoutPanelLeft } from 'lucide-react';
 import axios from 'axios';
 import Loader from '../components/Loader';
 import { getMediaUrl } from '../api/library';
@@ -167,15 +167,25 @@ const BookDetails = () => {
                             <Eye size={24} className="group-hover:scale-110 transition-transform" />
                             <span className="font-black uppercase tracking-tight">READ ONLINE</span>
                         </button>
-                        <a 
-                            href={pdfUrl} 
-                            download 
-                            onClick={() => trackPDFInteraction('download', book)}
+                        <button
+                            onClick={() => {
+                                const shareData = {
+                                    title: book.title,
+                                    text: `Check out "${book.title}" on The Opensource Library - ${book.summary?.substring(0, 100)}...`,
+                                    url: `${window.location.origin}/book/${book.slug}`
+                                };
+                                if (navigator.share) {
+                                    navigator.share(shareData);
+                                } else {
+                                    navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+                                    alert('Link copied to clipboard!');
+                                }
+                            }}
                             className="btn-outline w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg group hover:scale-[1.02] transition-transform"
                         >
-                            <Download size={24} className="group-hover:translate-y-0.5 transition-transform" />
-                            <span className="font-black uppercase tracking-tight">DOWNLOAD</span>
-                        </a>
+                            <Share2 size={24} className="group-hover:scale-110 transition-transform" />
+                            <span className="font-black uppercase tracking-tight">SHARE</span>
+                        </button>
                     </div>
                 </motion.div>
             </div>

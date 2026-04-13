@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText } from 'lucide-react';
+import { X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText } from 'lucide-react';
 import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
 
@@ -106,15 +106,25 @@ const BookModal = ({ book, onClose }) => {
                                         <Eye size={24} className="group-hover:scale-125 transition-transform" />
                                         <span className="font-black uppercase tracking-tight">READ ONLINE</span>
                                     </button>
-                                    <a 
-                                        href={pdfUrl} 
-                                        download 
-                                        onClick={() => trackPDFInteraction('download', book)}
+                                    <button
+                                        onClick={() => {
+                                            const shareData = {
+                                                title: book.title,
+                                                text: `Check out "${book.title}" on The Opensource Library - ${book.summary?.substring(0, 100)}...`,
+                                                url: `${window.location.origin}/book/${book.slug}`
+                                            };
+                                            if (navigator.share) {
+                                                navigator.share(shareData);
+                                            } else {
+                                                navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+                                                alert('Link copied to clipboard!');
+                                            }
+                                        }}
                                         className="btn-outline w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg group transform"
                                     >
-                                        <Download size={24} className="group-hover:-translate-y-1 transition-transform" />
-                                        <span className="font-black">DOWNLOAD</span>
-                                    </a>
+                                        <Share2 size={24} className="group-hover:scale-110 transition-transform" />
+                                        <span className="font-black">SHARE</span>
+                                    </button>
                                 </div>
                             </div>
                         </>
