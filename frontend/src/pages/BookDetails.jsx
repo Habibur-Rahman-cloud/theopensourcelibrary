@@ -64,7 +64,8 @@ const BookDetails = () => {
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
     const getViewerUrl = () => {
-        let params = `#page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
+        // toolbar=0 hides the native PDF toolbar (download, print, etc.)
+        let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
         return `${pdfUrl}${params}`;
     };

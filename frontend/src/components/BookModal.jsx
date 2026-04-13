@@ -14,9 +14,9 @@ const BookModal = ({ book, onClose }) => {
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
     // Feature toggles for the native viewer
-    // Fragments: #page=X&zoom=Y&pagemode=thumbs/bookmarks
+    // toolbar=0 hides the native PDF toolbar (download, print, etc.)
     const getViewerUrl = () => {
-        let params = `#page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
+        let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
         return `${pdfUrl}${params}`;
     };
