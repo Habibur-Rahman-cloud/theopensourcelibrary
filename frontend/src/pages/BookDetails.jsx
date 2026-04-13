@@ -61,7 +61,7 @@ const BookDetails = () => {
         </div>
     );
 
-    const pdfUrl = getMediaUrl(book.pdf_file, book.id);
+    const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
     const getViewerUrl = () => {
         let params = `#page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;

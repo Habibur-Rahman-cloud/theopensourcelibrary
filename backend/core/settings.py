@@ -145,8 +145,7 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
-    # Use SAMEORIGIN as default; view-pdf action overrides this via @xframe_options_exempt
-    X_FRAME_OPTIONS = 'SAMEORIGIN'
+    # X-Frame-Options removed - handled via CSP frame-ancestors in view-pdf response
 
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
