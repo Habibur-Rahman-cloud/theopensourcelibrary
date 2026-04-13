@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Download, Eye, ArrowLeft, Bookmark, Calendar, Inbox } from 'lucide-react';
+import { Download, Eye, ArrowLeft, Bookmark, Calendar, Inbox, X, ZoomIn, ZoomOut, FileText, LayoutPanelLeft } from 'lucide-react';
 import axios from 'axios';
 import Loader from '../components/Loader';
 import { getMediaUrl } from '../api/library';
@@ -11,6 +11,10 @@ const BookDetails = () => {
     const { slug } = useParams();
     const [book, setBook] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showReader, setShowReader] = useState(false);
+    const [zoom, setZoom] = useState(100);
+    const [showThumbnails, setShowThumbnails] = useState(false);
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         const fetchBook = async () => {
@@ -58,6 +62,12 @@ const BookDetails = () => {
     );
 
     const pdfUrl = getMediaUrl(book.pdf_file, book.id);
+
+    const getViewerUrl = () => {
+        let params = `#page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
+        if (showThumbnails) params += '&pagemode=thumbs';
+        return `${pdfUrl}${params}`;
+    };
 
     // JSON-LD Structured Data for Google
     const jsonLd = {
@@ -147,10 +157,10 @@ const BookDetails = () => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center gap-6 mt-auto pt-8 border-t border-white/5">
-                        <button 
+                        <button
                             onClick={() => {
                                 trackPDFInteraction('open', book);
-                                window.open(pdfUrl, '_blank');
+                                setShowReader(true);
                             }}
                             className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-3 py-5 px-10 text-lg shadow-xl shadow-primary/20 group hover:scale-[1.02] transition-transform"
                         >
@@ -169,6 +179,53 @@ const BookDetails = () => {
                     </div>
                 </motion.div>
             </div>
+
+            {showReader && (
+                <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+                    <div className="w-full p-4 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110]">
+                        <button
+                            onClick={() => setShowReader(false)}
+                            className="px-4 py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all"
+                        >
+                            <X size={18} />
+                            <span>Close Reader</span>
+                        </button>
+                        <div className="flex items-center space-x-2 md:space-x-6">
+                            <div className="flex items-center space-x-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+                                <FileText size={16} className="text-primary hidden sm:block" />
+                                <span className="text-white/40 text-[10px] uppercase font-black tracking-widest hidden sm:block">PG</span>
+                                <input
+                                    type="number"
+                                    value={page}
+                                    onChange={(e) => setPage(Math.max(1, parseInt(e.target.value) || 1))}
+                                    className="w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-sm"
+                                />
+                            </div>
+                            <div className="flex items-center bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                                <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-2 text-white hover:bg-white/10 transition-colors"><ZoomOut size={18}/></button>
+                                <span className="px-2 text-white text-[10px] font-black min-w-[40px] text-center">{zoom}%</span>
+                                <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-2 text-white hover:bg-white/10 transition-colors"><ZoomIn size={18}/></button>
+                            </div>
+                            <button
+                                onClick={() => setShowThumbnails(!showThumbnails)}
+                                className={`p-2 rounded-xl transition-all border ${showThumbnails ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
+                                title="Toggle Thumbnails Sidebar"
+                            >
+                                <LayoutPanelLeft size={20} />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex-grow w-full bg-gray-200 overflow-hidden relative">
+                        <iframe
+                            key={`${zoom}-${showThumbnails}-${page}`}
+                            src={getViewerUrl()}
+                            title={book.title}
+                            className="w-full h-full border-none shadow-2xl"
+                            allow="fullscreen"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

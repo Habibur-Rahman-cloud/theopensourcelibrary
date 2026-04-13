@@ -40,10 +40,16 @@ class BookViewSet(viewsets.ModelViewSet):
         return queryset
 
     @method_decorator(xframe_options_exempt)
-    @action(detail=True, methods=['get'], url_path='view-pdf', lookup_url_kwarg='pk')
+    @action(detail=True, methods=['get'], url_path='view-pdf')
     def view_pdf(self, request, pk=None):
         import requests
-        book = get_object_or_404(Book, pk=pk)
+        # Override lookup_field temporarily for pk-based lookup
+        original_lookup_field = self.lookup_field
+        self.lookup_field = 'pk'
+        try:
+            book = self.get_object()
+        finally:
+            self.lookup_field = original_lookup_field
         if not book.pdf_file:
             return Response({"error": "No PDF file associated with this book"}, status=status.HTTP_404_NOT_FOUND)
             
