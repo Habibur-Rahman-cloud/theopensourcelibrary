@@ -40,7 +40,7 @@ class BookViewSet(viewsets.ModelViewSet):
         return queryset
 
     @method_decorator(xframe_options_exempt)
-    @action(detail=True, methods=['get'], url_path='view-pdf')
+    @action(detail=True, methods=['get'], url_path='view-pdf', lookup_url_kwarg='pk')
     def view_pdf(self, request, pk=None):
         import requests
         book = get_object_or_404(Book, pk=pk)
