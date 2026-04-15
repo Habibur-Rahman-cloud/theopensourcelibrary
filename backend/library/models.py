@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from cloudinary_storage.storage import RawMediaCloudinaryStorage
 
@@ -19,12 +20,17 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+def validate_file_size(value):
+    limit = 10 * 1024 * 1024 # 10 MB limit for Cloudinary Free Tier
+    if value.size > limit:
+        raise ValidationError(f'File size too large. Size is {value.size / (1024*1024):.2f} MB. Maximum allowed is 10 MB because of Cloudinary free tier limits.')
+
 class Book(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     category = models.ForeignKey(Category, related_name='books', on_delete=models.CASCADE)
     cover_image = models.ImageField(upload_to='covers/')
-    pdf_file = models.FileField(upload_to='pdfs/', storage=RawMediaCloudinaryStorage())
+    pdf_file = models.FileField(upload_to='pdfs/', storage=RawMediaCloudinaryStorage(), validators=[validate_file_size])
     summary = models.TextField(help_text="Short summary for the home/detail card")
     description = models.TextField(help_text="Full book description")
     created_at = models.DateTimeField(auto_now_add=True)
