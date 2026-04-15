@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from cloudinary_storage.storage import RawMediaCloudinaryStorage
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -23,7 +24,7 @@ class Book(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     category = models.ForeignKey(Category, related_name='books', on_delete=models.CASCADE)
     cover_image = models.ImageField(upload_to='covers/')
-    pdf_file = models.FileField(upload_to='pdfs/')
+    pdf_file = models.FileField(upload_to='pdfs/', storage=RawMediaCloudinaryStorage())
     summary = models.TextField(help_text="Short summary for the home/detail card")
     description = models.TextField(help_text="Full book description")
     created_at = models.DateTimeField(auto_now_add=True)
