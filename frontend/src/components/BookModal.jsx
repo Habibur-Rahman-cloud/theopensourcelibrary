@@ -18,8 +18,22 @@ const BookModal = ({ book, onClose }) => {
     const [zoom, setZoom] = useState(100);
     const [showThumbnails, setShowThumbnails] = useState(false);
     const [saveFlash, setSaveFlash] = useState(false);
+    const [blobUrl, setBlobUrl] = useState(null);
 
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
+
+    // Load PDF as blob when reader opens
+    useEffect(() => {
+        if (showReader && pdfUrl && !blobUrl) {
+            fetch(pdfUrl)
+                .then(res => res.blob())
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    setBlobUrl(url);
+                })
+                .catch(err => console.error('Error loading PDF:', err));
+        }
+    }, [showReader, pdfUrl, blobUrl]);
 
     // Load saved progress
     useEffect(() => {
@@ -42,14 +56,21 @@ const BookModal = ({ book, onClose }) => {
     };
 
     const getViewerUrl = () => {
+        // Use blob URL if available, otherwise fall back to regular URL
+        const url = blobUrl || pdfUrl;
         let params = `#toolbar=0&page=${currentPage}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
-        return `${pdfUrl}${params}`;
+        return `${url}${params}`;
     };
 
     const handleCloseReader = () => {
         handleSaveProgress();
         setShowReader(false);
+        // Clean up blob URL to free memory
+        if (blobUrl) {
+            URL.revokeObjectURL(blobUrl);
+            setBlobUrl(null);
+        }
     };
 
     const handleOpenReader = () => {
@@ -241,14 +262,23 @@ const BookModal = ({ book, onClose }) => {
 
                             {/* PDF Viewer - Iframe */}
                             <div className="flex-1 overflow-hidden bg-gray-200">
-                                <iframe
-                                    key={`${zoom}-${showThumbnails}-${currentPage}`}
-                                    src={getViewerUrl()}
-                                    title={book.title}
-                                    className="w-full h-full border-none"
-                                    allow="fullscreen"
-                                    sandbox="allow-same-origin allow-scripts"
-                                />
+                                {blobUrl ? (
+                                    <iframe
+                                        key={`${zoom}-${showThumbnails}-${currentPage}`}
+                                        src={getViewerUrl()}
+                                        title={book.title}
+                                        className="w-full h-full border-none"
+                                        allow="fullscreen"
+                                        sandbox="allow-same-origin allow-scripts"
+                                    />
+                                ) : (
+                                    <div className="flex items-center justify-center h-full bg-[#1a1a2e]">
+                                        <div className="flex flex-col items-center space-y-4">
+                                            <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                                            <p className="text-white/60 text-sm font-medium">Loading PDF...</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Bottom Badge */}
