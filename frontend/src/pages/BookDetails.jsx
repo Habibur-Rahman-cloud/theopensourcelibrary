@@ -17,6 +17,23 @@ const BookDetails = () => {
     const [showThumbnails, setShowThumbnails] = useState(false);
     const [page, setPage] = useState(1);
     const [savedProgress, setSavedProgress] = useState(null);
+    const [relatedBooks, setRelatedBooks] = useState([]);
+
+    // Fetch related books when current book is loaded
+    useEffect(() => {
+        const fetchRelated = async () => {
+            if (book?.category_slug) {
+                try {
+                    const response = await axios.get(`${import.meta.env.VITE_API_BASE}books/?category=${book.category_slug}`);
+                    const filtered = response.data.filter(b => b.slug !== book.slug).slice(0, 4);
+                    setRelatedBooks(filtered);
+                } catch (error) {
+                    console.error("Error fetching related books:", error);
+                }
+            }
+        };
+        fetchRelated();
+    }, [book]);
 
     // Load saved progress when book loads
     useEffect(() => {
@@ -240,6 +257,38 @@ const BookDetails = () => {
                             <span className="font-black uppercase tracking-tight">SHARE</span>
                         </button>
                     </div>
+
+                    {relatedBooks.length > 0 && (
+                        <div className="mt-12 pt-8 border-t border-white/5">
+                            <h3 className="text-white/40 text-xs font-black uppercase tracking-[0.2em] mb-6 flex items-center space-x-2">
+                                <Bookmark size={14} />
+                                <span>Related Books</span>
+                            </h3>
+                            <ul className="flex flex-col gap-3">
+                                {relatedBooks.map((relatedBook) => (
+                                    <li key={relatedBook.id}>
+                                        <Link 
+                                            to={`/book/${relatedBook.slug}`} 
+                                            className="group flex flex-col sm:flex-row items-start sm:items-center p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 hover:border-white/10 transition-all shadow-sm hover:shadow-md"
+                                        >
+                                            <div className="flex-grow">
+                                                <h4 className="text-lg font-bold text-heading group-hover:text-primary transition-colors">
+                                                    {relatedBook.title}
+                                                </h4>
+                                                <p className="text-sm text-muted line-clamp-1 mt-1">
+                                                    {relatedBook.summary}
+                                                </p>
+                                            </div>
+                                            <div className="mt-3 sm:mt-0 sm:ml-4 flex-shrink-0 text-xs font-bold uppercase tracking-widest text-primary/80 group-hover:text-primary transition-colors flex items-center space-x-1">
+                                                <span>Read</span>
+                                                <ArrowLeft size={14} className="rotate-180 transform" />
+                                            </div>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </motion.div>
             </div>
 
