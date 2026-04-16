@@ -1,1 +1,1 @@
-web: bash -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --limit-request-field_size 32768 --limit-request-fields 200 --timeout 120"
+web: bash -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --limit-request-field_size 32768 --limit-request-fields 200 --timeout 300 --workers 2"
