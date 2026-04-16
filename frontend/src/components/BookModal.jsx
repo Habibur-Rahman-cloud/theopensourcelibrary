@@ -1,19 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft,
-    ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon,
-    BookOpen, BookmarkCheck, ChevronLeft, ChevronRight,
-    Maximize2, Minimize2
+    ZoomIn, ZoomOut,
+    BookOpen, BookmarkCheck, FileText
 } from 'lucide-react';
-
-import { Worker, Viewer, SpecialZoomLevel } from '@react-pdf-viewer/core';
-import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
-import { zoomPlugin } from '@react-pdf-viewer/zoom';
-import { thumbnailPlugin } from '@react-pdf-viewer/thumbnail';
-
-import '@react-pdf-viewer/core/lib/styles/index.css';
-import '@react-pdf-viewer/thumbnail/lib/styles/index.css';
 
 import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
@@ -24,29 +15,11 @@ const BookModal = ({ book, onClose }) => {
     const [showReader, setShowReader] = useState(false);
     const [savedProgress, setSavedProgress] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(0);
-    const [currentScale, setCurrentScale] = useState(1);
+    const [zoom, setZoom] = useState(100);
     const [showThumbnails, setShowThumbnails] = useState(false);
     const [saveFlash, setSaveFlash] = useState(false);
-    const [pageInput, setPageInput] = useState('1');
 
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
-
-    // --- Plugins (created once per mount) ---
-    const pageNavPlugin = useMemo(() => pageNavigationPlugin(), []);
-    const zoomPlug     = useMemo(() => zoomPlugin(),           []);
-    const thumbPlug    = useMemo(() => thumbnailPlugin(),      []);
-
-    const {
-        jumpToNextPage,
-        jumpToPreviousPage,
-        jumpToPage,
-        CurrentPageLabel,
-        NumberOfPages,
-    } = pageNavPlugin;
-
-    const { ZoomIn, ZoomOut, CurrentScale } = zoomPlug;
-    const { Thumbnails } = thumbPlug;
 
     // Load saved progress
     useEffect(() => {
@@ -54,14 +27,8 @@ const BookModal = ({ book, onClose }) => {
         if (progress) {
             setSavedProgress(progress);
             setCurrentPage(progress.page);
-            setPageInput(String(progress.page));
         }
     }, [book.slug]);
-
-    // Sync page input when currentPage changes externally
-    useEffect(() => {
-        setPageInput(String(currentPage));
-    }, [currentPage]);
 
     const handleSaveProgress = () => {
         saveReadingProgress(book.slug, currentPage, {
@@ -72,6 +39,12 @@ const BookModal = ({ book, onClose }) => {
         setSavedProgress(getReadingProgress(book.slug));
         setSaveFlash(true);
         setTimeout(() => setSaveFlash(false), 800);
+    };
+
+    const getViewerUrl = () => {
+        let params = `#toolbar=0&page=${currentPage}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
+        if (showThumbnails) params += '&pagemode=thumbs';
+        return `${pdfUrl}${params}`;
     };
 
     const handleCloseReader = () => {
@@ -89,53 +62,8 @@ const BookModal = ({ book, onClose }) => {
         setShowReader(true);
     };
 
-    // Jump to page on input enter
-    const handlePageInputSubmit = (e) => {
-        if (e.key === 'Enter') {
-            const pg = Math.max(1, Math.min(totalPages, parseInt(pageInput) || 1));
-            jumpToPage(pg - 1);
-            setPageInput(String(pg));
-        }
-    };
-
     return (
         <AnimatePresence>
-            {/* ── Global PDF viewer override styles ── */}
-            <style>{`
-                .rpv-core__inner-container { overflow: hidden !important; }
-                .custom-pdf-viewer .rpv-core__doc-error,
-                .custom-pdf-viewer .rpv-core__doc-loading {
-                    color: white;
-                    background: transparent;
-                }
-                .custom-pdf-viewer .rpv-thumbnail__items {
-                    padding: 8px 4px;
-                    background: #0d1224;
-                }
-                .custom-pdf-viewer .rpv-thumbnail__item {
-                    border: 2px solid transparent;
-                    border-radius: 6px;
-                    margin-bottom: 8px;
-                    cursor: pointer;
-                    transition: border-color 0.2s;
-                }
-                .custom-pdf-viewer .rpv-thumbnail__item--selected,
-                .custom-pdf-viewer .rpv-thumbnail__item:hover {
-                    border-color: #7c3aed;
-                }
-                .custom-page-input {
-                    background: transparent;
-                    color: white;
-                    border: none;
-                    outline: none;
-                    text-align: center;
-                    font-weight: 900;
-                    font-size: 0.875rem;
-                    width: 40px;
-                }
-                .custom-page-input::-webkit-outer-spin-button,
-                .custom-page-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-            `}</style>
 
             <div className={`fixed inset-0 z-[100] flex items-center justify-center ${showReader ? 'p-0' : 'p-4 md:p-8'}`}>
                 {/* Backdrop */}
@@ -252,13 +180,11 @@ const BookModal = ({ book, onClose }) => {
                         </>
                     ) : (
                         /* ══════════════════════════════════════
-                           CUSTOM PDF READER VIEW
+                           IFRAME PDF READER VIEW
                         ══════════════════════════════════════ */
-                        <div className="w-full h-full flex flex-col bg-[#0d1224] custom-pdf-viewer">
-
-                            {/* ── Custom Toolbar ── */}
+                        <div className="w-full h-full flex flex-col bg-[#0d1224]">
+                            {/* Custom Toolbar */}
                             <div className="flex items-center justify-between px-3 py-2 bg-[#0d1224] border-b border-white/10 gap-2 flex-shrink-0 z-50">
-
                                 {/* Left: Close + Save */}
                                 <div className="flex items-center gap-2">
                                     <button
@@ -280,77 +206,32 @@ const BookModal = ({ book, onClose }) => {
 
                                 {/* Center: Page Navigation */}
                                 <div className="flex items-center gap-1 sm:gap-2">
-                                    <button
-                                        onClick={() => jumpToPreviousPage()}
-                                        className="p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/15 active:scale-90 transition-all"
-                                        title="Previous page"
-                                    >
-                                        <ChevronLeft size={16} />
-                                    </button>
-
                                     <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5">
+                                        <FileText size={14} className="text-primary" />
+                                        <span className="text-white/40 text-[10px] uppercase font-black tracking-wider hidden sm:inline">PG</span>
                                         <input
-                                            className="custom-page-input"
                                             type="number"
-                                            value={pageInput}
-                                            onChange={(e) => setPageInput(e.target.value)}
-                                            onKeyDown={handlePageInputSubmit}
-                                            onBlur={() => {
-                                                const pg = Math.max(1, Math.min(totalPages, parseInt(pageInput) || 1));
-                                                jumpToPage(pg - 1);
-                                                setPageInput(String(pg));
-                                            }}
-                                            min={1}
-                                            max={totalPages}
+                                            value={currentPage}
+                                            onChange={(e) => setCurrentPage(Math.max(1, parseInt(e.target.value) || 1))}
+                                            className="w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-xs sm:text-sm"
                                         />
-                                        <span className="text-white/40 text-xs font-bold">/</span>
-                                        <span className="text-white/60 text-xs font-black min-w-[24px]">
-                                            <NumberOfPages>
-                                                {({ numberOfPages }) => <span>{numberOfPages}</span>}
-                                            </NumberOfPages>
-                                        </span>
                                     </div>
-
-                                    <button
-                                        onClick={() => jumpToNextPage()}
-                                        className="p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/15 active:scale-90 transition-all"
-                                        title="Next page"
-                                    >
-                                        <ChevronRight size={16} />
-                                    </button>
                                 </div>
 
                                 {/* Right: Zoom + Thumbnails */}
                                 <div className="flex items-center gap-1 sm:gap-2">
-                                    {/* Zoom */}
                                     <div className="flex items-center bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-                                        <ZoomOut>
-                                            {({ onClick }) => (
-                                                <button onClick={onClick} className="p-2 text-white hover:bg-white/15 transition-colors active:scale-90" title="Zoom out">
-                                                    <ZoomOutIcon size={16} />
-                                                </button>
-                                            )}
-                                        </ZoomOut>
-                                        <CurrentScale>
-                                            {({ scale }) => (
-                                                <span className="px-2 text-white text-xs font-black min-w-[44px] text-center">
-                                                    {Math.round(scale * 100)}%
-                                                </span>
-                                            )}
-                                        </CurrentScale>
-                                        <ZoomIn>
-                                            {({ onClick }) => (
-                                                <button onClick={onClick} className="p-2 text-white hover:bg-white/15 transition-colors active:scale-90" title="Zoom in">
-                                                    <ZoomInIcon size={16} />
-                                                </button>
-                                            )}
-                                        </ZoomIn>
+                                        <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-2 text-white hover:bg-white/10 transition-colors" title="Zoom out">
+                                            <ZoomOut size={16} />
+                                        </button>
+                                        <span className="px-2 text-white text-xs font-black min-w-[44px] text-center">{zoom}%</span>
+                                        <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-2 text-white hover:bg-white/10 transition-colors" title="Zoom in">
+                                            <ZoomIn size={16} />
+                                        </button>
                                     </div>
-
-                                    {/* Thumbnails toggle */}
                                     <button
                                         onClick={() => setShowThumbnails(!showThumbnails)}
-                                        className={`p-2 rounded-lg border transition-all active:scale-90 ${showThumbnails ? 'bg-primary border-primary text-white shadow-lg shadow-primary/30' : 'bg-white/5 border-white/10 text-white hover:bg-white/15'}`}
+                                        className={`p-2 rounded-lg border transition-all active:scale-90 ${showThumbnails ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white/5 border-white/10 text-white hover:bg-white/15'}`}
                                         title="Toggle thumbnails"
                                     >
                                         <LayoutPanelLeft size={17} />
@@ -358,34 +239,16 @@ const BookModal = ({ book, onClose }) => {
                                 </div>
                             </div>
 
-                            {/* ── Reader Body ── */}
-                            <div className="flex flex-1 overflow-hidden">
-
-                                {/* Thumbnail Sidebar */}
-                                {showThumbnails && (
-                                    <div className="w-[140px] sm:w-[160px] flex-shrink-0 overflow-y-auto bg-[#0d1224] border-r border-white/10 custom-scrollbar">
-                                        <Thumbnails />
-                                    </div>
-                                )}
-
-                                {/* PDF Viewer */}
-                                <div className="flex-1 overflow-hidden">
-                                    <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                                        <Viewer
-                                            fileUrl={pdfUrl}
-                                            plugins={[pageNavPlugin, zoomPlug, thumbPlug]}
-                                            defaultScale={SpecialZoomLevel.PageWidth}
-                                            initialPage={currentPage > 1 ? currentPage - 1 : 0}
-                                            onPageChange={(e) => {
-                                                setCurrentPage(e.currentPage + 1);
-                                            }}
-                                            onDocumentLoad={(e) => {
-                                                setTotalPages(e.doc.numPages);
-                                            }}
-                                            theme={{ theme: 'dark' }}
-                                        />
-                                    </Worker>
-                                </div>
+                            {/* PDF Viewer - Iframe */}
+                            <div className="flex-1 overflow-hidden bg-gray-200">
+                                <iframe
+                                    key={`${zoom}-${showThumbnails}-${currentPage}`}
+                                    src={getViewerUrl()}
+                                    title={book.title}
+                                    className="w-full h-full border-none"
+                                    allow="fullscreen"
+                                    sandbox="allow-same-origin allow-scripts"
+                                />
                             </div>
 
                             {/* Bottom Badge */}
