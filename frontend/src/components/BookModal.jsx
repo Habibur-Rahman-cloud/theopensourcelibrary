@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn, ZoomOut, FileText, BookOpen, BookmarkCheck } from 'lucide-react';
+import { X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon, FileText, BookOpen, BookmarkCheck } from 'lucide-react';
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
 import { getReadingProgress, saveReadingProgress } from '../utils/readingProgress';
@@ -55,16 +59,120 @@ const BookModal = ({ book, onClose }) => {
         setShowReader(true);
     };
 
-    // Feature toggles for the native viewer
-    // toolbar=0 hides the native PDF toolbar (download, print, etc.)
-    const getViewerUrl = () => {
-        let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
-        if (showThumbnails) params += '&pagemode=thumbs';
-        return `${pdfUrl}${params}`;
+    const handlersRef = React.useRef({ handleClose: null, handleSave: null });
+    handlersRef.current.handleClose = handleCloseReader;
+    handlersRef.current.handleSave = handleSaveProgress;
+
+    const ZoomDisplay = () => {
+        const [z, setZ] = useState(100);
+        useEffect(() => {
+            const handleZoom = (e) => setZ(Math.round(e.detail * 100));
+            window.addEventListener('pdf-custom-zoom', handleZoom);
+            return () => window.removeEventListener('pdf-custom-zoom', handleZoom);
+        }, []);
+        return <>{z}%</>;
     };
+
+    const defaultLayoutPluginInstance = React.useMemo(() => {
+        return defaultLayoutPlugin({
+            sidebarTabs: (defaultTabs) => [defaultTabs[0]], // Thumbnails only
+            renderToolbar: (Toolbar) => (
+                <Toolbar>
+                    {(props) => {
+                        const { CurrentPageInput, ZoomIn, ZoomOut, ToggleSidebar } = props;
+                        return (
+                            <div className="w-full p-2 sm:p-3 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110] gap-2">
+                                <button
+                                    onClick={() => handlersRef.current.handleClose()}
+                                    className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
+                                >
+                                    <X size={16} className="sm:hidden" />
+                                    <span className="hidden sm:inline">&larr;</span>
+                                    <span className="text-xs sm:text-sm">Close</span>
+                                </button>
+
+                                <button
+                                    id="save-progress-btn"
+                                    onClick={() => handlersRef.current.handleSave()}
+                                    className="px-3 py-2 sm:px-4 sm:py-2 bg-white/10 text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:bg-white/20 active:scale-95 transition-all text-xs sm:text-sm whitespace-nowrap border border-white/20"
+                                    title="Save current page"
+                                >
+                                    <BookmarkCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                    <span className="hidden sm:inline">Save</span>
+                                    <span className="sm:hidden">Save</span>
+                                </button>
+
+                                <div className="flex items-center space-x-1 sm:space-x-3">
+                                    <div className="flex items-center space-x-1 bg-white/5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10 custom-pdf-page-input">
+                                        <FileText size={14} className="text-primary" />
+                                        <span className="text-white/40 text-[10px] uppercase font-black tracking-wider hidden sm:inline">PG</span>
+                                        <div className="w-10 sm:w-16">
+                                            <CurrentPageInput />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center bg-white/5 rounded-lg sm:rounded-xl border border-white/10 overflow-hidden">
+                                        <ZoomOut>
+                                            {(zoomOutProps) => (
+                                                <button onClick={zoomOutProps.onClick} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomOutIcon size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
+                                            )}
+                                        </ZoomOut>
+                                        <span className="px-1 sm:px-2 text-white text-[10px] sm:text-xs font-black min-w-[32px] sm:min-w-[40px] text-center flex items-center justify-center">
+                                            <ZoomDisplay />
+                                        </span>
+                                        <ZoomIn>
+                                            {(zoomInProps) => (
+                                                <button onClick={zoomInProps.onClick} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomInIcon size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
+                                            )}
+                                        </ZoomIn>
+                                    </div>
+
+                                    <ToggleSidebar>
+                                        {(toggleProps) => (
+                                            <button 
+                                                onClick={toggleProps.onClick}
+                                                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all border ${toggleProps.isToggled ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
+                                                title="Toggle Thumbnails"
+                                            >
+                                                <LayoutPanelLeft size={18} className="sm:w-[20px] sm:h-[20px]" />
+                                            </button>
+                                        )}
+                                    </ToggleSidebar>
+                                </div>
+                            </div>
+                        );
+                    }}
+                </Toolbar>
+            ),
+        });
+    }, []);
 
     return (
         <AnimatePresence>
+            <style>{`
+                .custom-pdf-page-input .rpv-core__textbox {
+                    background-color: transparent !important;
+                    color: white !important;
+                    border: none !important;
+                    text-align: center !important;
+                    padding: 0 !important;
+                    width: 100% !important;
+                    font-weight: 900 !important;
+                    font-size: 0.875rem !important;
+                }
+                .custom-pdf-page-input .rpv-core__textbox:focus {
+                    outline: none !important;
+                    box-shadow: none !important;
+                }
+                .custom-pdf-wrapper .rpv-default-layout__toolbar {
+                    background-color: transparent;
+                    border-bottom: none;
+                    padding: 0;
+                }
+                .custom-pdf-wrapper .rpv-core__inner-page {
+                    background-color: white !important;
+                }
+            `}</style>
             <div className={`fixed inset-0 z-[100] flex items-center justify-center ${showReader ? 'p-0' : 'p-4 md:p-8'}`}>
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -181,76 +289,21 @@ const BookModal = ({ book, onClose }) => {
                             </div>
                         </>
                     ) : (
-                        <div className="w-full h-full bg-white flex flex-col relative">
-                            {/* Pro-Reader Header - Compact Responsive */}
-                            <div className="w-full p-2 sm:p-3 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110] gap-2">
-                                {/* Close Button - Compact */}
-                                <button
-                                    onClick={handleCloseReader}
-                                    className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
-                                >
-                                    <X size={16} className="sm:hidden" />
-                                    <span className="hidden sm:inline">&larr;</span>
-                                    <span className="text-xs sm:text-sm">Close</span>
-                                </button>
-
-                                {/* Save Progress Button */}
-                                <button
-                                    id="save-progress-btn"
-                                    onClick={handleSaveProgress}
-                                    className="px-3 py-2 sm:px-4 sm:py-2 bg-white/10 text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:bg-white/20 active:scale-95 transition-all text-xs sm:text-sm whitespace-nowrap border border-white/20"
-                                    title="Save current page"
-                                >
-                                    <BookmarkCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
-                                    <span className="hidden sm:inline">Save</span>
-                                    <span className="sm:hidden">Save</span>
-                                </button>
-
-                                {/* Controls - Compact on mobile */}
-                                <div className="flex items-center space-x-1 sm:space-x-3">
-                                    {/* Page Input */}
-                                    <div className="flex items-center space-x-1 bg-white/5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10">
-                                        <FileText size={14} className="text-primary" />
-                                        <span className="text-white/40 text-[10px] uppercase font-black tracking-wider hidden sm:inline">PG</span>
-                                        <input 
-                                            type="number" 
-                                            value={page}
-                                            onChange={(e) => setPage(Math.max(1, parseInt(e.target.value) || 1))}
-                                            className="w-8 sm:w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-xs sm:text-sm"
-                                        />
-                                    </div>
-
-                                    {/* Zoom Controls */}
-                                    <div className="flex items-center bg-white/5 rounded-lg sm:rounded-xl border border-white/10 overflow-hidden">
-                                        <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomOut size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
-                                        <span className="px-1 sm:px-2 text-white text-[10px] font-black min-w-[32px] sm:min-w-[40px] text-center">{zoom}%</span>
-                                        <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomIn size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
-                                    </div>
-
-                                    {/* Thumbnails Toggle */}
-                                    <button 
-                                        onClick={() => setShowThumbnails(!showThumbnails)}
-                                        className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all border ${showThumbnails ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
-                                        title="Toggle Thumbnails"
-                                    >
-                                        <LayoutPanelLeft size={18} className="sm:w-[20px] sm:h-[20px]" />
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            {/* Stable Global Viewer Area */}
-                            <div className="flex-grow w-full bg-gray-200 overflow-hidden relative">
-                                <iframe 
-                                    key={`${zoom}-${showThumbnails}-${page}`}
-                                    src={getViewerUrl()}
-                                    title={book.title}
-                                    className="w-full h-full border-none shadow-2xl"
-                                    allow="fullscreen"
+                        <div className="w-full h-full bg-navy-900 flex flex-col relative custom-pdf-wrapper">
+                            <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                                <Viewer 
+                                    fileUrl={pdfUrl}
+                                    plugins={[defaultLayoutPluginInstance]}
+                                    initialPage={page ? Math.max(0, page - 1) : 0}
+                                    onPageChange={(e) => setPage(e.currentPage + 1)}
+                                    // Using a custom event exactly as planned
+                                    onZoom={(e) => window.dispatchEvent(new CustomEvent('pdf-custom-zoom', { detail: e.scale }))}
+                                    theme="dark" // The pdfjs supports dark theme context potentially, but the viewer handles UI
                                 />
-                                <div className="absolute inset-x-0 bottom-4 pointer-events-none flex justify-center">
-                                    <div className="bg-navy-900/90 backdrop-blur-md px-4 py-2 rounded-full text-white/50 text-[10px] font-bold tracking-widest uppercase border border-white/10">
-                                        Secure Content Delivery Active
-                                    </div>
+                            </Worker>
+                            <div className="absolute inset-x-0 bottom-4 pointer-events-none flex justify-center z-[120]">
+                                <div className="bg-navy-900/90 backdrop-blur-md px-4 py-2 rounded-full text-white/50 text-[10px] font-bold tracking-widest uppercase border border-white/10 shadow-2xl">
+                                    Secure Content Delivery Active
                                 </div>
                             </div>
                         </div>
