@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     ArrowLeft, BookOpen, Eye, Share2, Bookmark, 
-    Calendar, Inbox, X, BookmarkCheck, ChevronLeft, ChevronRight,
-    ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon
+    Calendar, Inbox, LayoutPanelLeft, ZoomIn, ZoomOut, 
+    FileText, X, BookmarkCheck
 } from 'lucide-react';
 import axios from 'axios';
 import Loader from '../components/Loader';
@@ -13,38 +13,16 @@ import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
 import { getReadingProgress, saveReadingProgress } from '../utils/readingProgress';
 
-import { Worker, Viewer, SpecialZoomLevel } from '@react-pdf-viewer/core';
-import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
-import { zoomPlugin } from '@react-pdf-viewer/zoom';
-import '@react-pdf-viewer/core/lib/styles/index.css';
-
 const BookDetails = () => {
     const { slug } = useParams();
     const [book, setBook] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showReader, setShowReader] = useState(false);
+    const [zoom, setZoom] = useState(100);
+    const [showThumbnails, setShowThumbnails] = useState(false);
     const [page, setPage] = useState(1);
     const [savedProgress, setSavedProgress] = useState(null);
     const [relatedBooks, setRelatedBooks] = useState([]);
-    const [totalPages, setTotalPages] = useState(0);
-    const [currentScale, setCurrentScale] = useState(1);
-    const [isDocumentLoaded, setIsDocumentLoaded] = useState(false);
-
-    // --- PDF Viewer Plugins ---
-    const pageNavPlugin = useMemo(() => pageNavigationPlugin(), []);
-    const zoomPlug = useMemo(() => zoomPlugin(), []);
-
-    const {
-        jumpToNextPage,
-        jumpToPreviousPage,
-        jumpToPage,
-        CurrentPageLabel,
-        NumberOfPages,
-    } = pageNavPlugin;
-
-    const { ZoomIn, ZoomOut, CurrentScale } = zoomPlug;
-
-    // Fetch related books when current book is loaded
     useEffect(() => {
         const fetchRelated = async () => {
             if (book?.category_slug) {
@@ -92,15 +70,7 @@ const BookDetails = () => {
     const handleCloseReader = () => {
         handleSaveProgress();
         setShowReader(false);
-        setIsDocumentLoaded(false);
     };
-
-    // Sync page input when page changes
-    useEffect(() => {
-        if (showReader && isDocumentLoaded && jumpToPage) {
-            jumpToPage(page - 1);
-        }
-    }, [page, showReader, isDocumentLoaded, jumpToPage]);
 
     useEffect(() => {
         const fetchBook = async () => {
@@ -148,6 +118,13 @@ const BookDetails = () => {
     );
 
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
+
+    const getViewerUrl = () => {
+        // toolbar=0 hides the native PDF toolbar (download, print, etc.)
+        let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
+        if (showThumbnails) params += '&pagemode=thumbs';
+        return `${pdfUrl}${params}`;
+    };
 
     // JSON-LD Structured Data for Google
     const jsonLd = {
@@ -305,171 +282,70 @@ const BookDetails = () => {
             </div>
 
             {showReader && (
-                <>
-                    {/* PDF Viewer Global Styles */}
-                    <style>{`
-                        .custom-pdf-viewer .rpv-core__inner-container { overflow: hidden !important; }
-                        .custom-pdf-viewer .rpv-core__doc-error,
-                        .custom-pdf-viewer .rpv-core__doc-loading {
-                            color: white;
-                            background: transparent;
-                        }
-                        .custom-page-input {
-                            background: transparent;
-                            color: white;
-                            border: none;
-                            outline: none;
-                            text-align: center;
-                            font-weight: 900;
-                            font-size: 0.875rem;
-                            width: 40px;
-                        }
-                        .custom-page-input::-webkit-outer-spin-button,
-                        .custom-page-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-                    `}</style>
+                <div className="fixed inset-0 z-[100] bg-[#0d1224] flex flex-col">
+                    {/* Compact Responsive Header */}
+                    <div className="w-full p-2 sm:p-3 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110] gap-2">
+                        <div className="flex items-center gap-2">
+                            {/* Close Button - Compact */}
+                            <button
+                                onClick={handleCloseReader}
+                                className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
+                            >
+                                <X size={16} className="sm:hidden" />
+                                <span className="hidden sm:inline">&larr;</span>
+                                <span className="text-xs sm:text-sm">Close</span>
+                            </button>
 
-                    <div className="fixed inset-0 z-[100] bg-[#0d1224] flex flex-col custom-pdf-viewer">
-                        {/* Custom PDF Toolbar */}
-                        <div className="flex items-center justify-between px-3 py-2 bg-[#0d1224] border-b border-white/10 gap-2 flex-shrink-0 z-50">
-                            {/* Left: Close + Save */}
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={handleCloseReader}
-                                    className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/80 active:scale-95 transition-all shadow-lg"
-                                >
-                                    <X size={15} />
-                                    <span className="hidden sm:inline">Close</span>
-                                </button>
-                                <button
-                                    onClick={handleSaveProgress}
-                                    className="flex items-center gap-1.5 px-3 py-2 bg-white/10 border border-white/20 text-white rounded-lg font-bold text-sm hover:bg-white/20 active:scale-95 transition-all"
-                                    title="Save reading progress"
-                                >
-                                    <BookmarkCheck size={15} />
-                                    <span className="hidden sm:inline">Save</span>
-                                </button>
-                            </div>
-
-                            {/* Center: Page Navigation */}
-                            <div className="flex items-center gap-1 sm:gap-2">
-                                <button
-                                    onClick={() => jumpToPreviousPage()}
-                                    className="p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/15 active:scale-90 transition-all"
-                                    title="Previous page"
-                                >
-                                    <ChevronLeft size={16} />
-                                </button>
-
-                                <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5">
-                                    <input
-                                        className="custom-page-input"
-                                        type="number"
-                                        value={page}
-                                        onChange={(e) => setPage(Math.max(1, parseInt(e.target.value) || 1))}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                const pg = Math.max(1, Math.min(totalPages, parseInt(page) || 1));
-                                                jumpToPage(pg - 1);
-                                                setPage(pg);
-                                            }
-                                        }}
-                                        onBlur={() => {
-                                            const pg = Math.max(1, Math.min(totalPages, parseInt(page) || 1));
-                                            jumpToPage(pg - 1);
-                                            setPage(pg);
-                                        }}
-                                        min={1}
-                                        max={totalPages}
-                                    />
-                                    <span className="text-white/40 text-xs font-bold">/</span>
-                                    <span className="text-white/60 text-xs font-black min-w-[24px]">
-                                        {isDocumentLoaded ? (
-                                            <NumberOfPages>
-                                                {({ numberOfPages }) => <span>{numberOfPages}</span>}
-                                            </NumberOfPages>
-                                        ) : (
-                                            <span>-</span>
-                                        )}
-                                    </span>
-                                </div>
-
-                                <button
-                                    onClick={() => jumpToNextPage()}
-                                    className="p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/15 active:scale-90 transition-all"
-                                    title="Next page"
-                                >
-                                    <ChevronRight size={16} />
-                                </button>
-                            </div>
-
-                            {/* Right: Zoom */}
-                            <div className="flex items-center gap-1 sm:gap-2">
-                                <div className="flex items-center bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-                                    {isDocumentLoaded ? (
-                                        <>
-                                            <ZoomOut>
-                                                {({ onClick }) => (
-                                                    <button onClick={onClick} className="p-2 text-white hover:bg-white/15 transition-colors active:scale-90" title="Zoom out">
-                                                        <ZoomOutIcon size={16} />
-                                                    </button>
-                                                )}
-                                            </ZoomOut>
-                                            <CurrentScale>
-                                                {({ scale }) => (
-                                                    <span className="px-2 text-white text-xs font-black min-w-[44px] text-center">
-                                                        {Math.round(scale * 100)}%
-                                                    </span>
-                                                )}
-                                            </CurrentScale>
-                                            <ZoomIn>
-                                                {({ onClick }) => (
-                                                    <button onClick={onClick} className="p-2 text-white hover:bg-white/15 transition-colors active:scale-90" title="Zoom in">
-                                                        <ZoomInIcon size={16} />
-                                                    </button>
-                                                )}
-                                            </ZoomIn>
-                                        </>
-                                    ) : (
-                                        <span className="px-2 text-white/40 text-xs">Loading...</span>
-                                    )}
-                                </div>
-                            </div>
+                            {/* Save Progress Button */}
+                            <button
+                                id="save-progress-btn"
+                                onClick={handleSaveProgress}
+                                className="px-3 py-2 sm:px-4 sm:py-2 bg-white/10 text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:bg-white/20 active:scale-95 transition-all text-xs sm:text-sm whitespace-nowrap border border-white/20"
+                                title="Save current page"
+                            >
+                                <BookmarkCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                <span className="hidden sm:inline">Save</span>
+                                <span className="sm:hidden">Save</span>
+                            </button>
                         </div>
 
-                        {/* PDF Viewer */}
-                        <div className="flex-1 overflow-hidden">
-                            {pdfUrl ? (
-                                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                                    <Viewer
-                                        fileUrl={pdfUrl}
-                                        plugins={[pageNavPlugin, zoomPlug]}
-                                        defaultScale={SpecialZoomLevel.PageWidth}
-                                        initialPage={page > 1 ? page - 1 : 0}
-                                        onPageChange={(e) => {
-                                            setPage(e.currentPage + 1);
-                                        }}
-                                        onDocumentLoad={(e) => {
-                                            setTotalPages(e.doc.numPages);
-                                            setIsDocumentLoaded(true);
-                                        }}
-                                        theme={{ theme: 'dark' }}
-                                    />
-                                </Worker>
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-white">
-                                    Loading PDF...
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Bottom Badge */}
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-40">
-                            <div className="bg-[#0d1224]/90 backdrop-blur-md px-4 py-1.5 rounded-full text-white/40 text-[10px] font-bold tracking-widest uppercase border border-white/10">
-                                Secure Content Delivery Active
+                        {/* Controls - Compact on mobile */}
+                        <div className="flex items-center space-x-1 sm:space-x-3">
+                            <div className="flex items-center space-x-1 bg-white/5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10">
+                                <FileText size={14} className="text-primary" />
+                                <span className="text-white/40 text-[10px] uppercase font-black tracking-wider hidden sm:inline">PG</span>
+                                <input
+                                    type="number"
+                                    value={page}
+                                    onChange={(e) => setPage(Math.max(1, parseInt(e.target.value) || 1))}
+                                    className="w-8 sm:w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-xs sm:text-sm"
+                                />
                             </div>
+                            <div className="flex items-center bg-white/5 rounded-lg sm:rounded-xl border border-white/10 overflow-hidden">
+                                <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomOut size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
+                                <span className="px-1 sm:px-2 text-white text-[10px] font-black min-w-[32px] sm:min-w-[40px] text-center">{zoom}%</span>
+                                <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomIn size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
+                            </div>
+                            <button
+                                onClick={() => setShowThumbnails(!showThumbnails)}
+                                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all border ${showThumbnails ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
+                                title="Toggle Thumbnails"
+                            >
+                                <LayoutPanelLeft size={18} className="sm:w-[20px] sm:h-[20px]" />
+                            </button>
                         </div>
                     </div>
-                </>
+                    <div className="flex-grow w-full bg-gray-200 overflow-hidden relative">
+                        <iframe
+                            key={`${zoom}-${showThumbnails}-${page}`}
+                            src={getViewerUrl()}
+                            title={book.title}
+                            className="w-full h-full border-none shadow-2xl"
+                            allow="fullscreen"
+                            sandbox="allow-same-origin allow-scripts"
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );
