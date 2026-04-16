@@ -28,6 +28,7 @@ const BookDetails = () => {
     const [relatedBooks, setRelatedBooks] = useState([]);
     const [totalPages, setTotalPages] = useState(0);
     const [currentScale, setCurrentScale] = useState(1);
+    const [isDocumentLoaded, setIsDocumentLoaded] = useState(false);
 
     // --- PDF Viewer Plugins ---
     const pageNavPlugin = useMemo(() => pageNavigationPlugin(), []);
@@ -91,14 +92,15 @@ const BookDetails = () => {
     const handleCloseReader = () => {
         handleSaveProgress();
         setShowReader(false);
+        setIsDocumentLoaded(false);
     };
 
     // Sync page input when page changes
     useEffect(() => {
-        if (showReader) {
+        if (showReader && isDocumentLoaded && jumpToPage) {
             jumpToPage(page - 1);
         }
-    }, [page, showReader, jumpToPage]);
+    }, [page, showReader, isDocumentLoaded, jumpToPage]);
 
     useEffect(() => {
         const fetchBook = async () => {
@@ -437,6 +439,7 @@ const BookDetails = () => {
                                     }}
                                     onDocumentLoad={(e) => {
                                         setTotalPages(e.doc.numPages);
+                                        setIsDocumentLoaded(true);
                                     }}
                                     theme={{ theme: 'dark' }}
                                 />
