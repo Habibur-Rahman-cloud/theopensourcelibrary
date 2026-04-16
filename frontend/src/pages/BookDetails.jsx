@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Share2, Eye, ArrowLeft, Bookmark, Calendar, Inbox, X, ZoomIn, ZoomOut, FileText, LayoutPanelLeft, BookOpen, BookmarkCheck } from 'lucide-react';
 import axios from 'axios';
 import Loader from '../components/Loader';
+import BookCard from '../components/BookCard';
 import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
 import { getReadingProgress, saveReadingProgress } from '../utils/readingProgress';
@@ -264,29 +265,15 @@ const BookDetails = () => {
                                 <Bookmark size={14} />
                                 <span>Related Books</span>
                             </h3>
-                            <ul className="flex flex-col gap-3">
-                                {relatedBooks.map((relatedBook) => (
-                                    <li key={relatedBook.id}>
-                                        <Link 
-                                            to={`/book/${relatedBook.slug}`} 
-                                            className="group flex flex-col sm:flex-row items-start sm:items-center p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 hover:border-white/10 transition-all shadow-sm hover:shadow-md"
-                                        >
-                                            <div className="flex-grow">
-                                                <h4 className="text-lg font-bold text-heading group-hover:text-primary transition-colors">
-                                                    {relatedBook.title}
-                                                </h4>
-                                                <p className="text-sm text-muted line-clamp-1 mt-1">
-                                                    {relatedBook.summary}
-                                                </p>
-                                            </div>
-                                            <div className="mt-3 sm:mt-0 sm:ml-4 flex-shrink-0 text-xs font-bold uppercase tracking-widest text-primary/80 group-hover:text-primary transition-colors flex items-center space-x-1">
-                                                <span>Read</span>
-                                                <ArrowLeft size={14} className="rotate-180 transform" />
-                                            </div>
-                                        </Link>
-                                    </li>
+                            <div className="grid grid-cols-2 md:grid-cols-2 gap-4 sm:gap-6">
+                                {relatedBooks.map((relatedBook, idx) => (
+                                    <BookCard 
+                                        key={relatedBook.id} 
+                                        book={relatedBook} 
+                                        index={idx} 
+                                    />
                                 ))}
-                            </ul>
+                            </div>
                         </div>
                     )}
                 </motion.div>
