@@ -383,9 +383,13 @@ const BookDetails = () => {
                                     />
                                     <span className="text-white/40 text-xs font-bold">/</span>
                                     <span className="text-white/60 text-xs font-black min-w-[24px]">
-                                        <NumberOfPages>
-                                            {({ numberOfPages }) => <span>{numberOfPages}</span>}
-                                        </NumberOfPages>
+                                        {isDocumentLoaded ? (
+                                            <NumberOfPages>
+                                                {({ numberOfPages }) => <span>{numberOfPages}</span>}
+                                            </NumberOfPages>
+                                        ) : (
+                                            <span>-</span>
+                                        )}
                                     </span>
                                 </div>
 
@@ -401,49 +405,61 @@ const BookDetails = () => {
                             {/* Right: Zoom */}
                             <div className="flex items-center gap-1 sm:gap-2">
                                 <div className="flex items-center bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-                                    <ZoomOut>
-                                        {({ onClick }) => (
-                                            <button onClick={onClick} className="p-2 text-white hover:bg-white/15 transition-colors active:scale-90" title="Zoom out">
-                                                <ZoomOutIcon size={16} />
-                                            </button>
-                                        )}
-                                    </ZoomOut>
-                                    <CurrentScale>
-                                        {({ scale }) => (
-                                            <span className="px-2 text-white text-xs font-black min-w-[44px] text-center">
-                                                {Math.round(scale * 100)}%
-                                            </span>
-                                        )}
-                                    </CurrentScale>
-                                    <ZoomIn>
-                                        {({ onClick }) => (
-                                            <button onClick={onClick} className="p-2 text-white hover:bg-white/15 transition-colors active:scale-90" title="Zoom in">
-                                                <ZoomInIcon size={16} />
-                                            </button>
-                                        )}
-                                    </ZoomIn>
+                                    {isDocumentLoaded ? (
+                                        <>
+                                            <ZoomOut>
+                                                {({ onClick }) => (
+                                                    <button onClick={onClick} className="p-2 text-white hover:bg-white/15 transition-colors active:scale-90" title="Zoom out">
+                                                        <ZoomOutIcon size={16} />
+                                                    </button>
+                                                )}
+                                            </ZoomOut>
+                                            <CurrentScale>
+                                                {({ scale }) => (
+                                                    <span className="px-2 text-white text-xs font-black min-w-[44px] text-center">
+                                                        {Math.round(scale * 100)}%
+                                                    </span>
+                                                )}
+                                            </CurrentScale>
+                                            <ZoomIn>
+                                                {({ onClick }) => (
+                                                    <button onClick={onClick} className="p-2 text-white hover:bg-white/15 transition-colors active:scale-90" title="Zoom in">
+                                                        <ZoomInIcon size={16} />
+                                                    </button>
+                                                )}
+                                            </ZoomIn>
+                                        </>
+                                    ) : (
+                                        <span className="px-2 text-white/40 text-xs">Loading...</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         {/* PDF Viewer */}
                         <div className="flex-1 overflow-hidden">
-                            <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                                <Viewer
-                                    fileUrl={pdfUrl}
-                                    plugins={[pageNavPlugin, zoomPlug]}
-                                    defaultScale={SpecialZoomLevel.PageWidth}
-                                    initialPage={page > 1 ? page - 1 : 0}
-                                    onPageChange={(e) => {
-                                        setPage(e.currentPage + 1);
-                                    }}
-                                    onDocumentLoad={(e) => {
-                                        setTotalPages(e.doc.numPages);
-                                        setIsDocumentLoaded(true);
-                                    }}
-                                    theme={{ theme: 'dark' }}
-                                />
-                            </Worker>
+                            {pdfUrl ? (
+                                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                                    <Viewer
+                                        fileUrl={pdfUrl}
+                                        plugins={[pageNavPlugin, zoomPlug]}
+                                        defaultScale={SpecialZoomLevel.PageWidth}
+                                        initialPage={page > 1 ? page - 1 : 0}
+                                        onPageChange={(e) => {
+                                            setPage(e.currentPage + 1);
+                                        }}
+                                        onDocumentLoad={(e) => {
+                                            setTotalPages(e.doc.numPages);
+                                            setIsDocumentLoaded(true);
+                                        }}
+                                        theme={{ theme: 'dark' }}
+                                    />
+                                </Worker>
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-white">
+                                    Loading PDF...
+                                </div>
+                            )}
                         </div>
 
                         {/* Bottom Badge */}
