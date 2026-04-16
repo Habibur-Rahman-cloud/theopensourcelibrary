@@ -26,6 +26,22 @@ const BookDetails = () => {
     const [page, setPage] = useState(1);
     const [savedProgress, setSavedProgress] = useState(null);
     const [relatedBooks, setRelatedBooks] = useState([]);
+    const [totalPages, setTotalPages] = useState(0);
+    const [currentScale, setCurrentScale] = useState(1);
+
+    // --- PDF Viewer Plugins ---
+    const pageNavPlugin = useMemo(() => pageNavigationPlugin(), []);
+    const zoomPlug = useMemo(() => zoomPlugin(), []);
+
+    const {
+        jumpToNextPage,
+        jumpToPreviousPage,
+        jumpToPage,
+        CurrentPageLabel,
+        NumberOfPages,
+    } = pageNavPlugin;
+
+    const { ZoomIn, ZoomOut, CurrentScale } = zoomPlug;
 
     // Fetch related books when current book is loaded
     useEffect(() => {
@@ -130,22 +146,6 @@ const BookDetails = () => {
     );
 
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
-    const [totalPages, setTotalPages] = useState(0);
-    const [currentScale, setCurrentScale] = useState(1);
-
-    // --- PDF Viewer Plugins ---
-    const pageNavPlugin = useMemo(() => pageNavigationPlugin(), []);
-    const zoomPlug = useMemo(() => zoomPlugin(), []);
-
-    const {
-        jumpToNextPage,
-        jumpToPreviousPage,
-        jumpToPage,
-        CurrentPageLabel,
-        NumberOfPages,
-    } = pageNavPlugin;
-
-    const { ZoomIn, ZoomOut, CurrentScale } = zoomPlug;
 
     // JSON-LD Structured Data for Google
     const jsonLd = {
