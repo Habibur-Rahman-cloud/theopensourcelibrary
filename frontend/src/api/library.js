@@ -64,7 +64,7 @@ export const getMediaUrl = (url, bookSlugOrId = null) => {
 
   // Use backend proxy for PDFs if bookSlugOrId is provided to bypass Cloudinary delivery blocks
   if (bookSlugOrId && url.includes('cloudinary.com') && url.includes('/pdfs/')) {
-    return `${API_BASE}books/${bookSlugOrId}/view-pdf/`;
+    return `${API_BASE}books/${encodeURIComponent(bookSlugOrId)}/view-pdf/`;
   }
 
   // If it's already a full URL (like from Cloudinary or an external source)

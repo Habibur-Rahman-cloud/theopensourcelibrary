@@ -86,7 +86,8 @@ const BookDetails = () => {
             fetch(pdfUrl)
                 .then(res => res.blob())
                 .then(blob => {
-                    const url = URL.createObjectURL(blob);
+                    const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(pdfBlob);
                     setBlobUrl(url);
                 })
                 .catch(err => console.error('Error loading PDF:', err));
@@ -141,7 +142,8 @@ const BookDetails = () => {
 
     const getViewerUrl = () => {
         // Use blob URL if available, otherwise fall back to regular URL
-        const url = blobUrl || pdfUrl;
+        // Prefer direct URL for native viewer features, fallback to blob
+        const url = pdfUrl || blobUrl;
         // toolbar=0 hides the native PDF toolbar (download, print, etc.)
         let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
