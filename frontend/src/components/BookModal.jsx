@@ -271,7 +271,6 @@ function BookModal({ book, onClose }) {
                                         title={book.title}
                                         className="w-full h-full border-none"
                                         allow="fullscreen"
-                                        sandbox="allow-same-origin allow-scripts"
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center h-full bg-[#1a1a2e]">
