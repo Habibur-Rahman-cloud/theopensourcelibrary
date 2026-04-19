@@ -142,8 +142,7 @@ const BookDetails = () => {
 
     const getViewerUrl = () => {
         // Use blob URL if available, otherwise fall back to regular URL
-        // Prefer direct URL for native viewer features, fallback to blob
-        const url = pdfUrl || blobUrl;
+        const url = blobUrl || pdfUrl;
         // toolbar=0 hides the native PDF toolbar (download, print, etc.)
         let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';

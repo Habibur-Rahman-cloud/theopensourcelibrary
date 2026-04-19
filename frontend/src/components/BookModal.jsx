@@ -60,8 +60,7 @@ function BookModal({ book, onClose }) {
 
     const getViewerUrl = () => {
         // Use blob URL if available, otherwise fall back to regular URL
-        // Prefer direct URL for native viewer features, fallback to blob
-        const url = pdfUrl || blobUrl;
+        const url = blobUrl || pdfUrl;
         let params = `#toolbar=0&page=${currentPage}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
         return `${url}${params}`;
