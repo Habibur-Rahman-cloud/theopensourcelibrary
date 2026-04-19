@@ -10,7 +10,9 @@ import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
 import { getReadingProgress, saveReadingProgress } from '../utils/readingProgress';
 
-const BookModal = ({ book, onClose }) => {
+function BookModal({ book, onClose }) {
+    if (!book) return null;
+
     const [activeTab, setActiveTab] = useState('summary');
     const [showReader, setShowReader] = useState(false);
     const [savedProgress, setSavedProgress] = useState(null);
@@ -293,6 +295,7 @@ const BookModal = ({ book, onClose }) => {
             </div>
         </AnimatePresence>
     );
-};
+}
+
 
 export default BookModal;

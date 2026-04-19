@@ -24,6 +24,8 @@ const BookDetails = () => {
     const [savedProgress, setSavedProgress] = useState(null);
     const [relatedBooks, setRelatedBooks] = useState([]);
     const [blobUrl, setBlobUrl] = useState(null);
+    const pdfUrl = book ? getMediaUrl(book.pdf_file, book.slug) : null;
+
     useEffect(() => {
         const fetchRelated = async () => {
             if (book?.category_slug) {
@@ -136,7 +138,6 @@ const BookDetails = () => {
         </div>
     );
 
-    const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
     const getViewerUrl = () => {
         // Use blob URL if available, otherwise fall back to regular URL
