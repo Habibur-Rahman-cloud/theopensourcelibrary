@@ -20,23 +20,7 @@ function BookModal({ book, onClose }) {
     const [zoom, setZoom] = useState(100);
     const [showThumbnails, setShowThumbnails] = useState(false);
     const [saveFlash, setSaveFlash] = useState(false);
-    const [blobUrl, setBlobUrl] = useState(null);
-
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
-
-    // Load PDF as blob when reader opens
-    useEffect(() => {
-        if (showReader && pdfUrl && !blobUrl) {
-            fetch(pdfUrl)
-                .then(res => res.blob())
-                .then(blob => {
-                    const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-                    const url = URL.createObjectURL(pdfBlob);
-                    setBlobUrl(url);
-                })
-                .catch(err => console.error('Error loading PDF:', err));
-        }
-    }, [showReader, pdfUrl, blobUrl]);
 
     // Load saved progress
     useEffect(() => {
@@ -59,21 +43,14 @@ function BookModal({ book, onClose }) {
     };
 
     const getViewerUrl = () => {
-        // Use blob URL if available, otherwise fall back to regular URL
-        const url = blobUrl || pdfUrl;
         let params = `#toolbar=0&page=${currentPage}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
-        return `${url}${params}`;
+        return `${pdfUrl}${params}`;
     };
 
     const handleCloseReader = () => {
         handleSaveProgress();
         setShowReader(false);
-        // Clean up blob URL to free memory
-        if (blobUrl) {
-            URL.revokeObjectURL(blobUrl);
-            setBlobUrl(null);
-        }
     };
 
     const handleOpenReader = () => {

@@ -62,11 +62,10 @@ class BookViewSet(viewsets.ModelViewSet):
             
             response = StreamingHttpResponse(
                 r.iter_content(chunk_size=8192),
-                content_type='application/octet-stream'
+                content_type='application/pdf'
             )
-            # Use 'attachment' so browser NEVER opens its native PDF viewer
-            # Our React PDF viewer (pdfjs) fetches this via XHR and renders to canvas
-            response['Content-Disposition'] = f'attachment; filename="{book.title}.pdf"'
+            # Use 'inline' so browser opens its native PDF viewer and remembers scroll position
+            response['Content-Disposition'] = f'inline; filename="{book.title}.pdf"'
             
             # Allow embedding from specific frontend domains
             # Note: frame-ancestors is the modern CSP equivalent of X-Frame-Options

@@ -23,7 +23,6 @@ const BookDetails = () => {
     const [page, setPage] = useState(1);
     const [savedProgress, setSavedProgress] = useState(null);
     const [relatedBooks, setRelatedBooks] = useState([]);
-    const [blobUrl, setBlobUrl] = useState(null);
     const pdfUrl = book ? getMediaUrl(book.pdf_file, book.slug) : null;
 
     useEffect(() => {
@@ -82,17 +81,10 @@ const BookDetails = () => {
 
     // Load PDF as blob when reader opens
     useEffect(() => {
-        if (showReader && pdfUrl && !blobUrl) {
-            fetch(pdfUrl)
-                .then(res => res.blob())
-                .then(blob => {
-                    const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-                    const url = URL.createObjectURL(pdfBlob);
-                    setBlobUrl(url);
-                })
-                .catch(err => console.error('Error loading PDF:', err));
+        if (showReader) {
+            trackPDFInteraction('open', book);
         }
-    }, [showReader, pdfUrl, blobUrl]);
+    }, [showReader, book]);
 
     useEffect(() => {
         const fetchBook = async () => {
@@ -141,12 +133,10 @@ const BookDetails = () => {
 
 
     const getViewerUrl = () => {
-        // Use blob URL if available, otherwise fall back to regular URL
-        const url = blobUrl || pdfUrl;
         // toolbar=0 hides the native PDF toolbar (download, print, etc.)
         let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
-        return `${url}${params}`;
+        return `${pdfUrl}${params}`;
     };
 
     // JSON-LD Structured Data for Google
