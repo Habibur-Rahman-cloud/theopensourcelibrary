@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    X, Share2, Info, AlignLeft, Eye, LayoutPanelLeft,
-    ZoomIn, ZoomOut,
-    BookOpen, BookmarkCheck, FileText
+    X, Share2, Info, AlignLeft, Eye,
+    BookOpen, BookmarkCheck, ArrowLeft
 } from 'lucide-react';
+import { Viewer, Worker } from '@react-pdf-viewer/core';
+import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
+
+// Import styles
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/page-navigation/lib/styles/index.css';
 
 import { getMediaUrl } from '../api/library';
 import { trackPDFInteraction } from '../utils/analytics';
@@ -16,11 +21,10 @@ function BookModal({ book, onClose }) {
     const [activeTab, setActiveTab] = useState('summary');
     const [showReader, setShowReader] = useState(false);
     const [savedProgress, setSavedProgress] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [zoom, setZoom] = useState(100);
-    const [showThumbnails, setShowThumbnails] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0); // 0-indexed for react-pdf-viewer
     const [saveFlash, setSaveFlash] = useState(false);
     const [blobUrl, setBlobUrl] = useState(null);
+    const pageNavigationPluginInstance = pageNavigationPlugin();
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
     // Load saved progress
@@ -84,11 +88,14 @@ function BookModal({ book, onClose }) {
         setTimeout(() => setSaveFlash(false), 800);
     };
 
-    const getViewerUrl = () => {
-        if (!blobUrl) return '';
-        let params = `#toolbar=0&page=${currentPage}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
-        if (showThumbnails) params += '&pagemode=thumbs';
-        return `${blobUrl}${params}`;
+    const handlePageChange = (e) => {
+        setCurrentPage(e.currentPage);
+        // Auto-save every few pages or on change
+        saveReadingProgress(book.slug, e.currentPage, {
+            title: book.title,
+            cover_image: book.cover_image,
+            category_name: book.category_name,
+        });
     };
 
     const handleCloseReader = () => {
@@ -190,7 +197,7 @@ function BookModal({ book, onClose }) {
                                             <BookOpen size={24} className="group-hover:scale-125 transition-transform" />
                                             <div className="flex flex-col items-start">
                                                 <span className="font-black uppercase tracking-tight text-sm">RESUME READING</span>
-                                                <span className="text-xs text-white/80">Page {savedProgress.page}</span>
+                                                <span className="text-xs text-white/80">Page {savedProgress.page + 1}</span>
                                             </div>
                                         </button>
                                     ) : (
@@ -226,88 +233,37 @@ function BookModal({ book, onClose }) {
                            IFRAME PDF READER VIEW
                         ══════════════════════════════════════ */
                         <div className="w-full h-full flex flex-col bg-[#0d1224]">
-                            {/* Custom Toolbar */}
-                            <div className="flex items-center justify-between px-3 py-2 bg-[#0d1224] border-b border-white/10 gap-2 flex-shrink-0 z-50">
-                                {/* Left: Close + Save */}
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={handleCloseReader}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/80 active:scale-95 transition-all shadow-lg"
-                                    >
-                                        <X size={15} />
-                                        <span className="hidden sm:inline">Close</span>
-                                    </button>
-                                    <button
-                                        onClick={handleSaveProgress}
-                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-sm active:scale-95 transition-all border ${saveFlash ? 'bg-green-500 border-green-400 text-white' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
-                                        title="Save reading progress"
-                                    >
-                                        <BookmarkCheck size={15} />
-                                        <span className="hidden sm:inline">Save</span>
-                                    </button>
-                                </div>
+                            {/* Floating Close Button for Reader */}
+                            <button
+                                onClick={handleCloseReader}
+                                className="absolute top-6 right-6 z-[110] p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all transform active:scale-90 shadow-2xl backdrop-blur-md border border-white/10 group"
+                                title="Exit Reader"
+                            >
+                                <X size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+                            </button>
 
-                                {/* Center: Page Navigation */}
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5">
-                                        <FileText size={14} className="text-primary" />
-                                        <span className="text-white/40 text-[10px] uppercase font-black tracking-wider hidden sm:inline">PG</span>
-                                        <input
-                                            type="number"
-                                            value={currentPage}
-                                            onChange={(e) => setCurrentPage(Math.max(1, parseInt(e.target.value) || 1))}
-                                            className="w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-xs sm:text-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Right: Zoom + Thumbnails */}
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <div className="flex items-center bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-                                        <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-2 text-white hover:bg-white/10 transition-colors" title="Zoom out">
-                                            <ZoomOut size={16} />
-                                        </button>
-                                        <span className="px-2 text-white text-xs font-black min-w-[44px] text-center">{zoom}%</span>
-                                        <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-2 text-white hover:bg-white/10 transition-colors" title="Zoom in">
-                                            <ZoomIn size={16} />
-                                        </button>
-                                    </div>
-                                    <button
-                                        onClick={() => setShowThumbnails(!showThumbnails)}
-                                        className={`p-2 rounded-lg border transition-all active:scale-90 ${showThumbnails ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white/5 border-white/10 text-white hover:bg-white/15'}`}
-                                        title="Toggle thumbnails"
-                                    >
-                                        <LayoutPanelLeft size={17} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* PDF Viewer - Iframe */}
-                            <div className="flex-1 overflow-hidden bg-gray-200">
+                            {/* PDF Viewer */}
+                            <div className="flex-1 overflow-hidden bg-[#0d1224] relative">
                                 {blobUrl ? (
-                                    <iframe
-                                        key={`${zoom}-${showThumbnails}-${currentPage}`}
-                                        src={getViewerUrl()}
-                                        title={book.title}
-                                        className="w-full h-full border-none"
-                                        allow="fullscreen"
-                                    />
+                                    <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                                        <Viewer
+                                            fileUrl={blobUrl}
+                                            initialPage={currentPage}
+                                            onPageChange={handlePageChange}
+                                            plugins={[pageNavigationPluginInstance]}
+                                            theme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'}
+                                        />
+                                    </Worker>
                                 ) : (
                                     <div className="flex items-center justify-center h-full bg-[#1a1a2e]">
                                         <div className="flex flex-col items-center space-y-4">
                                             <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                                            <p className="text-white/60 text-sm font-medium">Loading PDF...</p>
+                                            <p className="text-white/60 text-sm font-medium">Loading PDF Reader...</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Bottom Badge */}
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-40">
-                                <div className="bg-[#0d1224]/90 backdrop-blur-md px-4 py-1.5 rounded-full text-white/40 text-[10px] font-bold tracking-widest uppercase border border-white/10">
-                                    Secure Content Delivery Active
-                                </div>
-                            </div>
                         </div>
                     )}
                 </motion.div>

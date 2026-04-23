@@ -3,9 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     ArrowLeft, BookOpen, Eye, Share2, Bookmark, 
-    Calendar, Inbox, LayoutPanelLeft, ZoomIn, ZoomOut, 
-    FileText, X, BookmarkCheck
+    Calendar, Inbox, X, BookmarkCheck
 } from 'lucide-react';
+import { Viewer, Worker } from '@react-pdf-viewer/core';
+import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
+
+// Import styles
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/page-navigation/lib/styles/index.css';
 import axios from 'axios';
 import Loader from '../components/Loader';
 import BookCard from '../components/BookCard';
@@ -18,9 +23,8 @@ const BookDetails = () => {
     const [book, setBook] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showReader, setShowReader] = useState(false);
-    const [zoom, setZoom] = useState(100);
-    const [showThumbnails, setShowThumbnails] = useState(false);
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(0); // 0-indexed
+    const pageNavigationPluginInstance = pageNavigationPlugin();
     const [savedProgress, setSavedProgress] = useState(null);
     const [relatedBooks, setRelatedBooks] = useState([]);
     const [blobUrl, setBlobUrl] = useState(null);
@@ -164,12 +168,14 @@ const BookDetails = () => {
     );
 
 
-    const getViewerUrl = () => {
-        if (!blobUrl) return '';
-        // toolbar=0 hides the native PDF toolbar (download, print, etc.)
-        let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
-        if (showThumbnails) params += '&pagemode=thumbs';
-        return `${blobUrl}${params}`;
+    const handlePageChange = (e) => {
+        setPage(e.currentPage);
+        saveReadingProgress(book.slug, e.currentPage, {
+            title: book.title,
+            cover_image: book.cover_image,
+            category_name: book.category_name
+        });
+        setSavedProgress(getReadingProgress(book.slug));
     };
 
     // JSON-LD Structured Data for Google
@@ -271,7 +277,7 @@ const BookDetails = () => {
                                 <BookOpen size={24} className="group-hover:scale-110 transition-transform" />
                                 <div className="flex flex-col items-start">
                                     <span className="font-black uppercase tracking-tight text-sm">RESUME READING</span>
-                                    <span className="text-xs text-white/80">Page {savedProgress.page}</span>
+                                    <span className="text-xs text-white/80">Page {savedProgress.page + 1}</span>
                                 </div>
                             </button>
                         ) : (
@@ -330,71 +336,30 @@ const BookDetails = () => {
             {showReader && (
                 <div className="fixed inset-0 z-[100] bg-[#0d1224] flex flex-col">
                     {/* Compact Responsive Header */}
-                    <div className="w-full p-2 sm:p-3 bg-navy-900 border-b border-white/10 flex items-center justify-between z-[110] gap-2">
-                        <div className="flex items-center gap-2">
-                            {/* Close Button - Compact */}
-                            <button
-                                onClick={handleCloseReader}
-                                className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:scale-105 active:scale-95 transition-all text-sm sm:text-base whitespace-nowrap"
-                            >
-                                <X size={16} className="sm:hidden" />
-                                <span className="hidden sm:inline">&larr;</span>
-                                <span className="text-xs sm:text-sm">Close</span>
-                            </button>
-
-                            {/* Save Progress Button */}
-                            <button
-                                id="save-progress-btn"
-                                onClick={handleSaveProgress}
-                                className="px-3 py-2 sm:px-4 sm:py-2 bg-white/10 text-white rounded-lg font-bold flex items-center space-x-1 sm:space-x-2 shadow-lg hover:bg-white/20 active:scale-95 transition-all text-xs sm:text-sm whitespace-nowrap border border-white/20"
-                                title="Save current page"
-                            >
-                                <BookmarkCheck size={16} className="sm:w-[18px] sm:h-[18px]" />
-                                <span className="hidden sm:inline">Save</span>
-                                <span className="sm:hidden">Save</span>
-                            </button>
-                        </div>
-
-                        {/* Controls - Compact on mobile */}
-                        <div className="flex items-center space-x-1 sm:space-x-3">
-                            <div className="flex items-center space-x-1 bg-white/5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-white/10">
-                                <FileText size={14} className="text-primary" />
-                                <span className="text-white/40 text-[10px] uppercase font-black tracking-wider hidden sm:inline">PG</span>
-                                <input
-                                    type="number"
-                                    value={page}
-                                    onChange={(e) => setPage(Math.max(1, parseInt(e.target.value) || 1))}
-                                    className="w-8 sm:w-10 bg-transparent text-white font-black text-center border-none focus:ring-0 text-xs sm:text-sm"
-                                />
-                            </div>
-                            <div className="flex items-center bg-white/5 rounded-lg sm:rounded-xl border border-white/10 overflow-hidden">
-                                <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomOut size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
-                                <span className="px-1 sm:px-2 text-white text-[10px] font-black min-w-[32px] sm:min-w-[40px] text-center">{zoom}%</span>
-                                <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-1.5 sm:p-2 text-white hover:bg-white/10 transition-colors"><ZoomIn size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
-                            </div>
-                            <button
-                                onClick={() => setShowThumbnails(!showThumbnails)}
-                                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all border ${showThumbnails ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
-                                title="Toggle Thumbnails"
-                            >
-                                <LayoutPanelLeft size={18} className="sm:w-[20px] sm:h-[20px]" />
-                            </button>
-                        </div>
-                    </div>
-                    <div className="flex-grow w-full bg-gray-200 overflow-hidden relative">
+                    {/* Floating Close Button */}
+                    <button
+                        onClick={handleCloseReader}
+                        className="absolute top-6 right-6 z-[110] p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all transform active:scale-90 shadow-2xl backdrop-blur-md border border-white/10 group"
+                        title="Exit Reader"
+                    >
+                        <X size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+                    </button>
+                    <div className="flex-grow w-full bg-[#0d1224] overflow-hidden relative">
                         {blobUrl ? (
-                            <iframe
-                                key={`${zoom}-${showThumbnails}-${page}`}
-                                src={getViewerUrl()}
-                                title={book.title}
-                                className="w-full h-full border-none shadow-2xl"
-                                allow="fullscreen"
-                            />
+                            <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                                <Viewer
+                                    fileUrl={blobUrl}
+                                    initialPage={page}
+                                    onPageChange={handlePageChange}
+                                    plugins={[pageNavigationPluginInstance]}
+                                    theme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'}
+                                />
+                            </Worker>
                         ) : (
                             <div className="flex items-center justify-center h-full bg-[#1a1a2e]">
                                 <div className="flex flex-col items-center space-y-4">
                                     <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                                    <p className="text-white/60 text-sm font-medium">Loading PDF...</p>
+                                    <p className="text-white/60 text-sm font-medium">Loading Reader...</p>
                                 </div>
                             </div>
                         )}
