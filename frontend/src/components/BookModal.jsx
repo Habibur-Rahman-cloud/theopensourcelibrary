@@ -20,6 +20,7 @@ function BookModal({ book, onClose }) {
     const [zoom, setZoom] = useState(100);
     const [showThumbnails, setShowThumbnails] = useState(false);
     const [saveFlash, setSaveFlash] = useState(false);
+    const [blobUrl, setBlobUrl] = useState(null);
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
     // Load saved progress
@@ -30,6 +31,47 @@ function BookModal({ book, onClose }) {
             setCurrentPage(progress.page);
         }
     }, [book.slug]);
+
+    // Clean up blob URL to free memory
+    const clearBlobUrl = () => {
+        if (blobUrl) {
+            URL.revokeObjectURL(blobUrl);
+            setBlobUrl(null);
+        }
+    };
+
+    // Fetch PDF as blob when reader opens
+    useEffect(() => {
+        let active = true;
+        let currentBlobUrl = null;
+
+        const fetchPdfAsBlob = async () => {
+            if (showReader && pdfUrl && !blobUrl) {
+                try {
+                    const response = await fetch(pdfUrl);
+                    if (!response.ok) throw new Error('Failed to fetch PDF');
+                    const blob = await response.blob();
+                    if (!active) return;
+
+                    const url = URL.createObjectURL(blob);
+                    currentBlobUrl = url;
+                    setBlobUrl(url);
+                    trackPDFInteraction(savedProgress ? 'resume' : 'open', book);
+                } catch (error) {
+                    console.error("Error loading PDF blob:", error);
+                }
+            }
+        };
+
+        fetchPdfAsBlob();
+
+        return () => {
+            active = false;
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+            }
+        };
+    }, [showReader, pdfUrl, book]);
 
     const handleSaveProgress = () => {
         saveReadingProgress(book.slug, currentPage, {
@@ -43,23 +85,23 @@ function BookModal({ book, onClose }) {
     };
 
     const getViewerUrl = () => {
+        if (!blobUrl) return '';
         let params = `#toolbar=0&page=${currentPage}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
-        return `${pdfUrl}${params}`;
+        return `${blobUrl}${params}`;
     };
 
     const handleCloseReader = () => {
         handleSaveProgress();
         setShowReader(false);
+        clearBlobUrl();
     };
 
     const handleOpenReader = () => {
-        trackPDFInteraction('open', book);
         setShowReader(true);
     };
 
     const handleResumeReading = () => {
-        trackPDFInteraction('resume', book);
         setShowReader(true);
     };
 

@@ -23,6 +23,7 @@ const BookDetails = () => {
     const [page, setPage] = useState(1);
     const [savedProgress, setSavedProgress] = useState(null);
     const [relatedBooks, setRelatedBooks] = useState([]);
+    const [blobUrl, setBlobUrl] = useState(null);
     const pdfUrl = book ? getMediaUrl(book.pdf_file, book.slug) : null;
 
     useEffect(() => {
@@ -69,22 +70,53 @@ const BookDetails = () => {
         }
     };
 
-    const handleCloseReader = () => {
-        handleSaveProgress();
-        setShowReader(false);
-        // Clean up blob URL to free memory
+    // Clean up blob URL to free memory
+    const clearBlobUrl = () => {
         if (blobUrl) {
             URL.revokeObjectURL(blobUrl);
             setBlobUrl(null);
         }
     };
 
-    // Load PDF as blob when reader opens
+    const handleCloseReader = () => {
+        handleSaveProgress();
+        setShowReader(false);
+        clearBlobUrl();
+    };
+
+    // Fetch PDF as blob when reader opens
     useEffect(() => {
-        if (showReader) {
-            trackPDFInteraction('open', book);
-        }
-    }, [showReader, book]);
+        let active = true;
+        let currentBlobUrl = null;
+
+        const loadPdfAsBlob = async () => {
+            if (showReader && pdfUrl && !blobUrl) {
+                try {
+                    const response = await fetch(pdfUrl);
+                    if (!response.ok) throw new Error('Failed to fetch PDF');
+                    const blob = await response.blob();
+                    if (!active) return;
+
+                    const url = URL.createObjectURL(blob);
+                    currentBlobUrl = url;
+                    setBlobUrl(url);
+                    trackPDFInteraction(savedProgress ? 'resume' : 'open', book);
+                } catch (error) {
+                    console.error("Error loading PDF blob:", error);
+                }
+            }
+        };
+
+        loadPdfAsBlob();
+
+        return () => {
+            active = false;
+            // We clear it on unmount or if deps change
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+            }
+        };
+    }, [showReader, pdfUrl, book]);
 
     useEffect(() => {
         const fetchBook = async () => {
@@ -133,10 +165,11 @@ const BookDetails = () => {
 
 
     const getViewerUrl = () => {
+        if (!blobUrl) return '';
         // toolbar=0 hides the native PDF toolbar (download, print, etc.)
         let params = `#toolbar=0&page=${page}&zoom=${zoom}&navpanes=${showThumbnails ? 1 : 0}`;
         if (showThumbnails) params += '&pagemode=thumbs';
-        return `${pdfUrl}${params}`;
+        return `${blobUrl}${params}`;
     };
 
     // JSON-LD Structured Data for Google
