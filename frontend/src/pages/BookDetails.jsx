@@ -24,7 +24,9 @@ const BookDetails = () => {
     const [loading, setLoading] = useState(true);
     const [showReader, setShowReader] = useState(false);
     const [page, setPage] = useState(0); // 0-indexed
+    const [isReaderLoaded, setIsReaderLoaded] = useState(false);
     const pageNavigationPluginInstance = pageNavigationPlugin();
+    const { jumpToPage } = pageNavigationPluginInstance;
     const [savedProgress, setSavedProgress] = useState(null);
     const [relatedBooks, setRelatedBooks] = useState([]);
     const [blobUrl, setBlobUrl] = useState(null);
@@ -83,7 +85,7 @@ const BookDetails = () => {
     };
 
     const handleCloseReader = () => {
-        handleSaveProgress();
+        setIsReaderLoaded(false);
         setShowReader(false);
         clearBlobUrl();
     };
@@ -169,6 +171,8 @@ const BookDetails = () => {
 
 
     const handlePageChange = (e) => {
+        if (!isReaderLoaded) return;
+        
         setPage(e.currentPage);
         saveReadingProgress(book.slug, e.currentPage, {
             title: book.title,
@@ -176,6 +180,17 @@ const BookDetails = () => {
             category_name: book.category_name
         });
         setSavedProgress(getReadingProgress(book.slug));
+    };
+
+    const handleDocumentLoad = () => {
+        if (page > 0) {
+            setTimeout(() => {
+                jumpToPage(page);
+                setIsReaderLoaded(true);
+            }, 100);
+        } else {
+            setIsReaderLoaded(true);
+        }
     };
 
     // JSON-LD Structured Data for Google
@@ -349,7 +364,7 @@ const BookDetails = () => {
                             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                                 <Viewer
                                     fileUrl={blobUrl}
-                                    initialPage={page}
+                                    onDocumentLoad={handleDocumentLoad}
                                     onPageChange={handlePageChange}
                                     plugins={[pageNavigationPluginInstance]}
                                     theme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'}

@@ -24,7 +24,9 @@ function BookModal({ book, onClose }) {
     const [currentPage, setCurrentPage] = useState(0); // 0-indexed for react-pdf-viewer
     const [saveFlash, setSaveFlash] = useState(false);
     const [blobUrl, setBlobUrl] = useState(null);
+    const [isReaderLoaded, setIsReaderLoaded] = useState(false);
     const pageNavigationPluginInstance = pageNavigationPlugin();
+    const { jumpToPage } = pageNavigationPluginInstance;
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
     // Load saved progress
@@ -89,8 +91,10 @@ function BookModal({ book, onClose }) {
     };
 
     const handlePageChange = (e) => {
+        if (!isReaderLoaded) return;
+        
         setCurrentPage(e.currentPage);
-        // Auto-save every few pages or on change
+        // Auto-save on change
         saveReadingProgress(book.slug, e.currentPage, {
             title: book.title,
             cover_image: book.cover_image,
@@ -98,8 +102,20 @@ function BookModal({ book, onClose }) {
         });
     };
 
+    const handleDocumentLoad = () => {
+        // Jump to saved page if any
+        if (currentPage > 0) {
+            setTimeout(() => {
+                jumpToPage(currentPage);
+                setIsReaderLoaded(true);
+            }, 100);
+        } else {
+            setIsReaderLoaded(true);
+        }
+    };
+
     const handleCloseReader = () => {
-        handleSaveProgress();
+        setIsReaderLoaded(false);
         setShowReader(false);
         clearBlobUrl();
     };
@@ -248,7 +264,7 @@ function BookModal({ book, onClose }) {
                                     <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                                         <Viewer
                                             fileUrl={blobUrl}
-                                            initialPage={currentPage}
+                                            onDocumentLoad={handleDocumentLoad}
                                             onPageChange={handlePageChange}
                                             plugins={[pageNavigationPluginInstance]}
                                             theme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'}
