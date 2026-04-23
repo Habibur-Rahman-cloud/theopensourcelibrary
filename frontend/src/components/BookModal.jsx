@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     X, Share2, Info, AlignLeft, Eye,
@@ -28,8 +28,9 @@ function BookModal({ book, onClose }) {
     // Ref to always hold the latest target page — avoids stale closure in onDocumentLoad
     const targetPageRef = useRef(0);
 
-    // Stable plugin instance — recreating it every render breaks jumpToPage
-    const pageNavigationPluginInstance = useMemo(() => pageNavigationPlugin(), []);
+    // Plugin is called at component top level — this is correct per Rules of Hooks
+    // (pageNavigationPlugin itself calls React hooks internally)
+    const pageNavigationPluginInstance = pageNavigationPlugin();
     const { jumpToPage } = pageNavigationPluginInstance;
 
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -31,8 +31,9 @@ const BookDetails = () => {
     // Ref always holds the latest target page — no stale closure in onDocumentLoad
     const targetPageRef = useRef(0);
 
-    // Stable plugin instance — useMemo prevents recreation on every render
-    const pageNavigationPluginInstance = useMemo(() => pageNavigationPlugin(), []);
+    // Plugin is called at component top level — correct per Rules of Hooks
+    // (pageNavigationPlugin calls React hooks internally)
+    const pageNavigationPluginInstance = pageNavigationPlugin();
     const { jumpToPage } = pageNavigationPluginInstance;
 
     const pdfUrl = book ? getMediaUrl(book.pdf_file, book.slug) : null;
