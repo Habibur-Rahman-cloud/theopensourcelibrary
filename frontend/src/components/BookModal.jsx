@@ -4,7 +4,7 @@ import {
     X, Share2, Info, AlignLeft, Eye,
     BookOpen, BookmarkCheck, ArrowLeft
 } from 'lucide-react';
-import { Viewer, Worker } from '@react-pdf-viewer/core';
+import { Viewer, Worker, SpecialZoomLevel } from '@react-pdf-viewer/core';
 import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
 
 // Import styles
@@ -134,7 +134,7 @@ function BookModal({ book, onClose }) {
     return (
         <AnimatePresence>
 
-            <div className={`fixed inset-0 z-[100] flex items-center justify-center ${showReader ? 'p-0' : 'p-4 md:p-8'}`}>
+            <div className={`fixed inset-0 z-[100] flex items-center justify-center ${showReader ? 'p-0 md:p-8' : 'p-4 md:p-8'}`}>
                 {/* Backdrop */}
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -148,7 +148,7 @@ function BookModal({ book, onClose }) {
                     initial={{ scale: 0.9, opacity: 0, y: 50 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 50 }}
-                    className={`relative w-full max-w-6xl modal-bg overflow-hidden border border-white/10 shadow-2xl flex flex-col md:flex-row h-full ${showReader ? 'md:h-full' : 'md:h-auto md:max-h-[85vh]'} rounded-none md:rounded-[2rem]`}
+                    className={`relative w-full modal-bg overflow-hidden border border-white/10 shadow-2xl flex flex-col md:flex-row h-full ${showReader ? 'md:max-w-5xl md:h-[90vh] md:rounded-[2rem]' : 'max-w-6xl md:h-auto md:max-h-[85vh] md:rounded-[2rem]'} rounded-none`}
                 >
                     {/* ══════════════════════════════════════
                         BOOK DETAIL VIEW
@@ -267,6 +267,7 @@ function BookModal({ book, onClose }) {
                                     <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                                         <Viewer
                                             fileUrl={blobUrl}
+                                            defaultScale={SpecialZoomLevel.PageWidth}
                                             onDocumentLoad={handleDocumentLoad}
                                             onPageChange={handlePageChange}
                                             plugins={[pageNavigationPluginInstance]}

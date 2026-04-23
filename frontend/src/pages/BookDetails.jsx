@@ -5,7 +5,7 @@ import {
     ArrowLeft, BookOpen, Eye, Share2, Bookmark, 
     Calendar, Inbox, X, BookmarkCheck
 } from 'lucide-react';
-import { Viewer, Worker } from '@react-pdf-viewer/core';
+import { Viewer, Worker, SpecialZoomLevel } from '@react-pdf-viewer/core';
 import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
 
 // Import styles
@@ -351,7 +351,7 @@ const BookDetails = () => {
             </div>
 
             {showReader && (
-                <div className="fixed inset-0 z-[100] bg-[#0d1224] flex flex-col">
+                <div className="fixed inset-0 md:inset-8 z-[100] bg-[#0d1224] flex flex-col md:rounded-3xl overflow-hidden shadow-2xl border border-white/10">
                     {/* Compact Responsive Header */}
                     {/* Floating Close Button */}
                     <button
@@ -366,6 +366,7 @@ const BookDetails = () => {
                             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                                 <Viewer
                                     fileUrl={blobUrl}
+                                    defaultScale={SpecialZoomLevel.PageWidth}
                                     onDocumentLoad={handleDocumentLoad}
                                     onPageChange={handlePageChange}
                                     plugins={[pageNavigationPluginInstance]}
