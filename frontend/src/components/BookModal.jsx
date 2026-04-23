@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     X, Share2, Info, AlignLeft, Eye,
@@ -21,20 +21,26 @@ function BookModal({ book, onClose }) {
     const [activeTab, setActiveTab] = useState('summary');
     const [showReader, setShowReader] = useState(false);
     const [savedProgress, setSavedProgress] = useState(null);
-    const [currentPage, setCurrentPage] = useState(0); // 0-indexed for react-pdf-viewer
+    const [currentPage, setCurrentPage] = useState(0);
     const [saveFlash, setSaveFlash] = useState(false);
     const [blobUrl, setBlobUrl] = useState(null);
-    const [isReaderLoaded, setIsReaderLoaded] = useState(false);
-    const pageNavigationPluginInstance = pageNavigationPlugin();
+
+    // Ref to always hold the latest target page — avoids stale closure in onDocumentLoad
+    const targetPageRef = useRef(0);
+
+    // Stable plugin instance — recreating it every render breaks jumpToPage
+    const pageNavigationPluginInstance = useMemo(() => pageNavigationPlugin(), []);
     const { jumpToPage } = pageNavigationPluginInstance;
+
     const pdfUrl = getMediaUrl(book.pdf_file, book.slug);
 
-    // Load saved progress
+    // Load saved progress and sync ref
     useEffect(() => {
         const progress = getReadingProgress(book.slug);
         if (progress) {
             setSavedProgress(progress);
             setCurrentPage(progress.page);
+            targetPageRef.current = progress.page; // always keep ref in sync
         }
     }, [book.slug]);
 
@@ -91,11 +97,11 @@ function BookModal({ book, onClose }) {
     };
 
     const handlePageChange = (e) => {
-        if (!isReaderLoaded) return;
-        
-        setCurrentPage(e.currentPage);
-        // Auto-save on change
-        saveReadingProgress(book.slug, e.currentPage, {
+        const pg = e.currentPage;
+        setCurrentPage(pg);
+        targetPageRef.current = pg;
+        // Auto-save on every page turn
+        saveReadingProgress(book.slug, pg, {
             title: book.title,
             cover_image: book.cover_image,
             category_name: book.category_name,
@@ -103,14 +109,11 @@ function BookModal({ book, onClose }) {
     };
 
     const handleDocumentLoad = () => {
-        // Jump to saved page if any
-        if (currentPage > 0) {
-            setTimeout(() => {
-                jumpToPage(currentPage);
-                setIsReaderLoaded(true);
-            }, 100);
-        } else {
-            setIsReaderLoaded(true);
+        // Use ref — guaranteed to have the latest value, no stale closure issue
+        const target = targetPageRef.current;
+        if (target > 0) {
+            // Small delay lets the viewer finish rendering before we scroll
+            setTimeout(() => jumpToPage(target), 300);
         }
     };
 

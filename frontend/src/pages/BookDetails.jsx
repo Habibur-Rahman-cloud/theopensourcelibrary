@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -24,12 +24,17 @@ const BookDetails = () => {
     const [loading, setLoading] = useState(true);
     const [showReader, setShowReader] = useState(false);
     const [page, setPage] = useState(0); // 0-indexed
-    const [isReaderLoaded, setIsReaderLoaded] = useState(false);
-    const pageNavigationPluginInstance = pageNavigationPlugin();
-    const { jumpToPage } = pageNavigationPluginInstance;
     const [savedProgress, setSavedProgress] = useState(null);
     const [relatedBooks, setRelatedBooks] = useState([]);
     const [blobUrl, setBlobUrl] = useState(null);
+
+    // Ref always holds the latest target page — no stale closure in onDocumentLoad
+    const targetPageRef = useRef(0);
+
+    // Stable plugin instance — useMemo prevents recreation on every render
+    const pageNavigationPluginInstance = useMemo(() => pageNavigationPlugin(), []);
+    const { jumpToPage } = pageNavigationPluginInstance;
+
     const pdfUrl = book ? getMediaUrl(book.pdf_file, book.slug) : null;
 
     useEffect(() => {
@@ -47,13 +52,14 @@ const BookDetails = () => {
         fetchRelated();
     }, [book]);
 
-    // Load saved progress when book loads
+    // Load saved progress when book loads and sync ref
     useEffect(() => {
         if (book?.slug) {
             const progress = getReadingProgress(book.slug);
             if (progress) {
                 setSavedProgress(progress);
                 setPage(progress.page);
+                targetPageRef.current = progress.page; // keep ref in sync
             }
         }
     }, [book]);
@@ -85,7 +91,6 @@ const BookDetails = () => {
     };
 
     const handleCloseReader = () => {
-        setIsReaderLoaded(false);
         setShowReader(false);
         clearBlobUrl();
     };
@@ -171,10 +176,10 @@ const BookDetails = () => {
 
 
     const handlePageChange = (e) => {
-        if (!isReaderLoaded) return;
-        
-        setPage(e.currentPage);
-        saveReadingProgress(book.slug, e.currentPage, {
+        const pg = e.currentPage;
+        setPage(pg);
+        targetPageRef.current = pg;
+        saveReadingProgress(book.slug, pg, {
             title: book.title,
             cover_image: book.cover_image,
             category_name: book.category_name
@@ -183,13 +188,10 @@ const BookDetails = () => {
     };
 
     const handleDocumentLoad = () => {
-        if (page > 0) {
-            setTimeout(() => {
-                jumpToPage(page);
-                setIsReaderLoaded(true);
-            }, 100);
-        } else {
-            setIsReaderLoaded(true);
+        // Use ref — always has the latest value, no stale closure issue
+        const target = targetPageRef.current;
+        if (target > 0) {
+            setTimeout(() => jumpToPage(target), 300);
         }
     };
 
