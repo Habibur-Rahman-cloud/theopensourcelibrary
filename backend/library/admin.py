@@ -35,7 +35,7 @@ class CategoryAdmin(admin.ModelAdmin):
     hierarchy_name.admin_order_field = 'name'
 
     def book_count(self, obj):
-        count = obj._book_count
+        count = getattr(obj, '_book_count', 0)
         if count == 0:
             return format_html('<span style="color:#adb5bd;">0</span>')
         return format_html(
@@ -75,7 +75,7 @@ class TagAdmin(admin.ModelAdmin):
         )
 
     def book_count(self, obj):
-        count = obj._book_count
+        count = getattr(obj, '_book_count', 0)
         if count == 0:
             return format_html('<span style="color:#adb5bd;">0</span>')
         return format_html(
@@ -261,11 +261,14 @@ class BookAdmin(admin.ModelAdmin):
 
     def cover_preview(self, obj):
         if obj.cover_image:
-            return format_html(
-                '<img src="{}" style="width:48px;height:64px;object-fit:cover;'
-                'border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.25);" />',
-                obj.cover_image.url
-            )
+            try:
+                return format_html(
+                    '<img src="{}" style="width:48px;height:64px;object-fit:cover;'
+                    'border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.25);" />',
+                    obj.cover_image.url
+                )
+            except Exception:
+                return format_html('<span style="color:#dc3545;">Error loading image</span>')
         return format_html('<span style="color:#adb5bd;">No image</span>')
     cover_preview.short_description = 'Cover'
 
@@ -286,7 +289,7 @@ class BookAdmin(admin.ModelAdmin):
     category_tags.short_description = 'Categories'
 
     def tag_count(self, obj):
-        count = obj._tag_count
+        count = getattr(obj, '_tag_count', 0)
         if count == 0:
             return format_html('<span style="color:#adb5bd;">0 tags</span>')
         return format_html(
@@ -321,7 +324,7 @@ class BookAdmin(admin.ModelAdmin):
         else:
             tips.append('Missing meta description')
 
-        if obj.tags.exists():
+        if getattr(obj, '_tag_count', 0) > 0:
             score += 20
 
         if score >= 80:
