@@ -47,7 +47,10 @@ class Category(models.Model):
         return self.name
 
     def __str__(self):
-        return self.full_path
+        try:
+            return self.full_path
+        except Exception:
+            return self.name or "Unnamed Category"
 
 
 class Tag(models.Model):

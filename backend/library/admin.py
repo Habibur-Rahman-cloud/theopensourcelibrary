@@ -255,12 +255,12 @@ class BookAdmin(admin.ModelAdmin):
     )
 
     def seo_preview_panel(self, obj):
+        # Always return the JS/HTML for the preview, as it works even for new (unsaved) books
         return format_html(SEO_PREVIEW_JS)
     seo_preview_panel.short_description = 'Live Google Preview'
-    seo_preview_panel.allow_tags = True
 
     def cover_preview(self, obj):
-        if obj.cover_image:
+        if obj and obj.cover_image:
             try:
                 return format_html(
                     '<img src="{}" style="width:48px;height:64px;object-fit:cover;'
@@ -273,6 +273,8 @@ class BookAdmin(admin.ModelAdmin):
     cover_preview.short_description = 'Cover'
 
     def category_tags(self, obj):
+        if not obj:
+            return '-'
         cats = obj.categories.all()
         if not cats:
             return format_html('<span style="color:#adb5bd;">—</span>')
@@ -301,6 +303,8 @@ class BookAdmin(admin.ModelAdmin):
     tag_count.admin_order_field = '_tag_count'
 
     def seo_score(self, obj):
+        if not obj or not obj.pk:
+            return format_html('<span style="color:#adb5bd;">N/A</span>')
         """
         Simple visual SEO score based on whether meta_title and
         meta_description are filled, and if they're within char limits.
