@@ -10,35 +10,84 @@ from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from .models import Category, Book, Newsletter, RequestedBook
+from .models import Category, Tag, Book, Newsletter, RequestedBook
 from .serializers import (
     CategorySerializer,
+    TagSerializer,
     BookSerializer,
     NewsletterSerializer,
     RequestedBookSerializer,
 )
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    """
+    List all categories (top-level with nested children).
+    Filter by parent: /api/categories/?parent=none for top-level only.
+    """
     serializer_class = CategorySerializer
     lookup_field = 'slug'
 
+    def get_queryset(self):
+        queryset = Category.objects.prefetch_related('children').select_related('parent')
+        parent_param = self.request.query_params.get('parent')
+        if parent_param == 'none':
+            queryset = queryset.filter(parent=None)
+        return queryset.order_by('name')
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only list of all SEO tags.
+    GET /api/tags/           — all tags
+    GET /api/tags/{slug}/    — single tag detail
+    """
+    queryset = Tag.objects.all().order_by('name')
+    serializer_class = TagSerializer
+    lookup_field = 'slug'
+
+
 class BookViewSet(viewsets.ModelViewSet):
-    queryset = Book.objects.all().order_by('-created_at')
+    """
+    Books endpoint with rich filtering:
+      ?category=slug       — filter by category slug (M2M)
+      ?subcategory=slug    — filter by sub-category slug (M2M)
+      ?tag=slug            — filter by tag slug
+      ?search=query        — search title, author, summary
+    """
     serializer_class = BookSerializer
     lookup_field = 'slug'
 
     def get_queryset(self):
-        queryset = Book.objects.all().order_by('-created_at')
+        queryset = (
+            Book.objects
+            .prefetch_related('categories', 'tags')
+            .select_related('category')
+            .order_by('-created_at')
+        )
+
         category_slug = self.request.query_params.get('category')
+        subcategory_slug = self.request.query_params.get('subcategory')
+        tag_slug = self.request.query_params.get('tag')
         search_query = self.request.query_params.get('search')
-        
+
         if category_slug:
-            queryset = queryset.filter(category__slug=category_slug)
-            
+            # Filter via M2M categories (primary) with legacy FK fallback
+            queryset = queryset.filter(categories__slug=category_slug).distinct()
+
+        if subcategory_slug:
+            queryset = queryset.filter(categories__slug=subcategory_slug).distinct()
+
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug).distinct()
+
         if search_query:
-            queryset = queryset.filter(title__icontains=search_query) # Basic search by title
-            
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(author__icontains=search_query) |
+                Q(summary__icontains=search_query)
+            ).distinct()
+
         return queryset
 
     @method_decorator(xframe_options_exempt)

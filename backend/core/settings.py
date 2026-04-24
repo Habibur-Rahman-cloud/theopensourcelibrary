@@ -155,7 +155,7 @@ JAZZMIN_SETTINGS = {
     'site_brand': 'Library',
     'welcome_sign': 'Welcome to The Opensource Library Dashboard',
     'copyright': 'The Opensource Library Ltd',
-    'search_model': ['library.Book'],
+    'search_model': ['library.Book', 'library.Tag'],
     'user_avatar': None,
     'topmenu_links': [
         {'name': 'Home', 'url': 'admin:index', 'permissions': ['auth.view_user']},
@@ -169,7 +169,8 @@ JAZZMIN_SETTINGS = {
         'auth': 'fas fa-users-cog',
         'auth.user': 'fas fa-user',
         'auth.Group': 'fas fa-users',
-        'library.Category': 'fas fa-list',
+        'library.Category': 'fas fa-sitemap',
+        'library.Tag': 'fas fa-tags',
         'library.Book': 'fas fa-book',
         'library.Newsletter': 'fas fa-envelope-open-text',
         'library.RequestedBook': 'fas fa-paper-plane',
