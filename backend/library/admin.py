@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.db.models import Count
 
 from .models import Category, Tag, Book, Newsletter, RequestedBook
@@ -256,7 +257,7 @@ class BookAdmin(admin.ModelAdmin):
 
     def seo_preview_panel(self, obj):
         # Always return the JS/HTML for the preview, as it works even for new (unsaved) books
-        return format_html(SEO_PREVIEW_JS)
+        return mark_safe(SEO_PREVIEW_JS)
     seo_preview_panel.short_description = 'Live Google Preview'
 
     def cover_preview(self, obj):
