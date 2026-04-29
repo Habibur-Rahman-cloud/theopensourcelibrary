@@ -108,6 +108,9 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
+# Legacy settings required by django-cloudinary-storage to prevent AttributeError during collectstatic
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 # Cloudinary Credentials
 CLOUDINARY_STORAGE = {
